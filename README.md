@@ -68,7 +68,7 @@ flowchart TB
         end
 
         subgraph Alerts["Alert Infrastructure"]
-            ALERT_CONF[/config/user_alert.conf]
+            ALERT_CONF["/config/user_alert.conf"]
             ENROLL_SH[totp_enroll.sh]
             UNENROLL_SH[totp_unenroll.sh]
         end
