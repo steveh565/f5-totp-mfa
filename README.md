@@ -16,12 +16,6 @@ TMOS 17.5.1.5 with no external dependencies, suitable for use with Google Authen
 - HA support with automatic persistence
 - Active Directory and Local DB authentication support
 
-## Quick Start
-
-1. [Prerequisites](docs/01-prerequisites.md)
-2. [Network Configuration](docs/02-network-configuration.md)
-3. ...
-
 ## Architecture
 
 ```mermaid
@@ -120,14 +114,19 @@ flowchart TB
 |---|---|
 | [irule_totp_shared](irules/irule_totp_shared.tcl) | Shared TOTP procs |
 | [irule_totp_enroll](irules/irule_totp_enroll.tcl) | Enrollment flow |
-| ...
+| [irule_totp_api](irules/irule_totp_api.tcl) | API flow |
+| [irule_totp_admin_ui](irules/irule_totp_admin_ai.tcl) | Admin UI flow |
+| [irule_idp_mfa](irules/irule_idp_mfa.tcl) | APM MFA flow |
+| [totp_enroll.sh](scripts/totp_enroll.sh) | User Enrollment automation script |
+| [totp_unenroll.sh](scripts/totp_unenroll.sh) | User Unenrollment automation script |
+| [user_alert.conf](config/user_alert.conf) | Custom Alert definitions to trigger enroll/unenroll automation |
+| [qrcode.js](ifiles/qrcode.js) | QR Code JavaScript |
 
 ## Requirements
 
 - BIG-IP TMOS 17.5.1.5
 - APM + LTM provisioned
-- ...
 
 ## License
 
-[Your license]
+[Apache 2.0]
