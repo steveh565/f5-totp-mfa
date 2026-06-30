@@ -1,0 +1,2128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F5 BIG-IP TOTP MFA Implementation Guide</title>
+<style>
+:root{--bg:#fff;--text:#1a1a2e;--heading:#0f3460;--accent:#16213e;--code-bg:#f4f4f8;--code-border:#d0d0d8;--table-header:#0f3460;--table-alt:#f8f9fc;--border:#c0c0c8;--note-bg:#fff8e1;--note-border:#ffb300;--warn-bg:#fce4ec;--warn-border:#e53935;--success-bg:#e8f5e9;--success-border:#43a047;--info-bg:#e3f2fd;--info-border:#1976d2;--link:#1565c0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,'Helvetica Neue',Arial,sans-serif;font-size:11pt;line-height:1.65;color:var(--text);background:var(--bg);max-width:960px;margin:0 auto;padding:24px 40px}
+.cover{page-break-after:always;text-align:center;padding:100px 0 60px;border-bottom:4px solid var(--heading);margin-bottom:40px}
+.cover h1{font-size:28pt;color:var(--heading);margin-bottom:12px;letter-spacing:-.5px}
+.cover .subtitle{font-size:14pt;color:#555;margin-bottom:40px}
+.cover table{margin:40px auto 0;border-collapse:collapse;text-align:left;font-size:10.5pt}
+.cover table td{padding:6px 20px;border:none}
+.cover table td:first-child{font-weight:700;color:var(--heading)}
+.toc{page-break-after:always;margin-bottom:40px}
+.toc h2{font-size:18pt;color:var(--heading);margin-bottom:16px;border:none}
+.toc ol{list-style:none;counter-reset:toc;padding:0}
+.toc>ol>li{counter-increment:toc;margin-bottom:6px}
+.toc>ol>li::before{content:counter(toc) ". ";font-weight:700;color:var(--heading)}
+.toc a{color:var(--link);text-decoration:none}.toc a:hover{text-decoration:underline}
+h1{font-size:22pt;color:var(--heading);margin:48px 0 16px;padding-bottom:8px;border-bottom:3px solid var(--heading)}
+h2{font-size:16pt;color:var(--heading);margin:36px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--border)}
+h3{font-size:13pt;color:var(--accent);margin:28px 0 10px}
+h4{font-size:11.5pt;color:var(--accent);margin:20px 0 8px}
+p{margin:8px 0}ul,ol{margin:8px 0 8px 28px}li{margin-bottom:4px}
+code{font-family:'Cascadia Code','Fira Code',Consolas,Monaco,monospace;font-size:9.5pt;background:var(--code-bg);border:1px solid var(--code-border);border-radius:3px;padding:1px 5px}
+pre{background:var(--code-bg);border:1px solid var(--code-border);border-radius:6px;padding:16px 20px;margin:12px 0;overflow-x:auto;font-size:9pt;line-height:1.55;white-space:pre;tab-size:4;position:relative}
+pre code{background:none;border:none;padding:0;font-size:inherit}
+pre .copy-btn{position:absolute;top:6px;right:6px;background:var(--table-header);color:#fff;border:none;border-radius:4px;padding:4px 10px;font-size:8pt;cursor:pointer;opacity:0;transition:opacity .2s}
+pre:hover .copy-btn{opacity:1}
+pre .copy-btn:hover{background:var(--link)}
+pre .copy-btn.copied{background:#43a047}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:10pt}
+th{background:var(--table-header);color:#fff;font-weight:600;padding:10px 12px;text-align:left;border:1px solid var(--table-header)}
+td{padding:8px 12px;border:1px solid var(--border);vertical-align:top}
+tr:nth-child(even){background:var(--table-alt)}
+.note,.warn,.info,.success{border-left:4px solid;border-radius:4px;padding:12px 16px;margin:14px 0;font-size:10pt}
+.note{background:var(--note-bg);border-color:var(--note-border)}.warn{background:var(--warn-bg);border-color:var(--warn-border)}
+.info{background:var(--info-bg);border-color:var(--info-border)}.success{background:var(--success-bg);border-color:var(--success-border)}
+.note::before{content:"📝 Note: ";font-weight:700}.warn::before{content:"⚠️ Warning: ";font-weight:700}
+.info::before{content:"ℹ️ Info: ";font-weight:700}.success::before{content:"✅ ";font-weight:700}
+.diagram{background:#f9f9fb;border:1px solid var(--code-border);border-radius:6px;padding:16px;margin:14px 0;overflow-x:auto;font-family:'Cascadia Code',Consolas,monospace;font-size:8.5pt;line-height:1.4;white-space:pre}
+a{color:var(--link)}.page-break{page-break-before:always}
+.checklist{list-style:none;margin-left:0;padding-left:0}
+.checklist li{position:relative;padding-left:28px;margin-bottom:8px}
+.checklist li::before{content:"☐";position:absolute;left:0;color:var(--heading);font-size:14pt}
+@media print{body{padding:0;font-size:10pt;max-width:100%}pre{font-size:8pt;white-space:pre-wrap;word-wrap:break-word}pre .copy-btn{display:none}.diagram{font-size:7.5pt}h1{page-break-before:always}h1:first-of-type{page-break-before:avoid}}
+</style>
+</head>
+<body>
+
+<div class="cover">
+<h1>F5 BIG-IP APM<br>TOTP MFA Implementation Guide</h1>
+<p class="subtitle">Complete Configuration Guide for Time-Based One-Time Password Multi-Factor Authentication</p>
+<table>
+<tr><td>Platform</td><td>F5 BIG-IP TMOS 17.5.1.5</td></tr>
+<tr><td>Modules</td><td>APM (Access Policy Manager) + LTM (Local Traffic Manager)</td></tr>
+<tr><td>Dependencies</td><td>None — no iRulesLX, no external services, no CDN</td></tr>
+<tr><td>Version</td><td>3.1</td></tr>
+<tr><td>Domain</td><td>mfa-demo.local (customize for your environment)</td></tr>
+</table>
+</div>
+
+<div class="toc">
+<h2>Table of Contents</h2>
+<ol>
+<li><a href="#s1">Solution Overview</a></li>
+<li><a href="#s2">Architecture and Data Flow</a></li>
+<li><a href="#s3">Prerequisites</a></li>
+<li><a href="#s4">Network Configuration</a></li>
+<li><a href="#s5">SSL Certificates and Profiles</a></li>
+<li><a href="#s6">User Database Configuration</a></li>
+<li><a href="#s7">TOTP Infrastructure — Data Groups and Alert Scripts</a></li>
+<li><a href="#s8">iRules — Complete Code Listings</a></li>
+<li><a href="#s9">TOTP Enrollment Virtual Server</a></li>
+<li><a href="#s10">TOTP Verification API</a></li>
+<li><a href="#s11">MFA Portal Configuration</a></li>
+<li><a href="#s12">Administration Interface</a></li>
+<li><a href="#s13">High Availability Configuration</a></li>
+<li><a href="#s14">Testing and Validation</a></li>
+<li><a href="#s15">Troubleshooting</a></li>
+<li><a href="#s16">Appendix A — API Endpoint Reference</a></li>
+<li><a href="#s17">Appendix B — Log Message Reference</a></li>
+<li><a href="#s18">Appendix C — Configuration Values Reference</a></li>
+<li><a href="#s19">Appendix D — TMOS Tcl 8.5 Limitations</a></li>
+<li><a href="#s20">Appendix E — QR Code JavaScript Library</a></li>
+</ol>
+</div>
+
+<!-- Section 1: Solution Overview -->
+<h1 id="s1">1. Solution Overview</h1>
+
+<p>This guide provides complete instructions to deploy a TOTP (Time-Based One-Time Password) multi-factor authentication solution on F5 BIG-IP. The solution is entirely self-contained — all components run on the BIG-IP with no external dependencies.</p>
+
+<h3>Key Features</h3>
+<table>
+<tr><th>Feature</th><th>Description</th></tr>
+<tr><td>Self-contained</td><td>No external MFA services required</td></tr>
+<tr><td>Standards-based</td><td>RFC 6238 TOTP compatible with any authenticator app</td></tr>
+<tr><td>Self-service enrollment</td><td>Users enroll via QR code scanning</td></tr>
+<tr><td>Self-service re-enrollment</td><td>Users can reset their authenticator from webtop</td></tr>
+<tr><td>Rate limiting</td><td>Protection against brute-force attacks</td></tr>
+<tr><td>Encrypted storage</td><td>AES-256 encryption for stored secrets</td></tr>
+<tr><td>HA support</td><td>Config-sync compatible for high availability</td></tr>
+<tr><td>Admin interface</td><td>Web-based administration console</td></tr>
+<tr><td>RESTful API</td><td>API access for integration and management</td></tr>
+</table>
+
+<h3>Key Design Decisions</h3>
+<table>
+<tr><th>Decision</th><th>Rationale</th></tr>
+<tr><td>No <code>iRulesLX</code></td><td>All logic in native Tcl iRules for maximum compatibility</td></tr>
+<tr><td>No <code>exec</code> in iRules</td><td>Disabled on modern TMOS; use <code>log</code> + <code>user_alert.conf</code></td></tr>
+<tr><td>No inline JS in iRules</td><td>Tcl parser conflicts with <code>[]</code>; serve JS from iFile</td></tr>
+<tr><td>Two-tier storage</td><td>Subtable cache (instant) + data group (persistent + configsync)</td></tr>
+<tr><td>Lazy loading</td><td>Secrets loaded from DG to subtable on first access</td></tr>
+<tr><td>Alert-triggered persistence</td><td>iRule logs alert → script → <code>tmsh modify data-group</code></td></tr>
+<tr><td>Non-routable internal VS</td><td><code>10.255.255.255:80</code> for HTTP Auth agent, unreachable externally</td></tr>
+<tr><td>Centralized config</td><td>All settings in <code>totp_config_dg</code> data group</td></tr>
+<tr><td>Prefixed proc calls</td><td><code>call irule_totp_shared::proc_name</code> for cross-iRule calls</td></tr>
+<tr><td>No <code>static::</code> cross-iRule</td><td>Not visible across iRules; use DG lookups with defaults</td></tr>
+</table>
+
+<h3>Solution Components</h3>
+<table>
+<tr><th>Component</th><th>Virtual Server</th><th>IP:Port</th><th>FQDN</th></tr>
+<tr><td>TOTP Enrollment</td><td><code>vs_totp_enroll</code></td><td>10.1.1.100:443</td><td>totp-enroll.mfa-demo.local</td></tr>
+<tr><td>TOTP API (External)</td><td><code>vs_totp_api</code></td><td>10.1.1.101:443</td><td>totp-api.mfa-demo.local</td></tr>
+<tr><td>TOTP API (Internal)</td><td><code>vs_totp_api_internal</code></td><td>10.255.255.255:80</td><td>—</td></tr>
+<tr><td>MFA Portal</td><td><code>vs_mfa_portal</code></td><td>10.1.1.102:443</td><td>portal.mfa-demo.local</td></tr>
+<tr><td>Admin UI</td><td><code>vs_totp_admin</code></td><td>10.1.1.104:443</td><td>totp-admin.mfa-demo.local</td></tr>
+</table>
+
+<div class="note">Replace all IP addresses and hostnames with values appropriate for your environment.</div>
+
+<!-- Section 2: Architecture -->
+<h1 id="s2">2. Architecture and Data Flow</h1>
+
+<h2>2.1 Solution Architecture</h2>
+<div class="diagram">                                    Users
+                                      │
+                                      ▼
+                    ┌─────────────────────────────────────┐
+                    │           External Network          │
+                    │              10.1.1.0/24            │
+                    └─────────────────────────────────────┘
+                                      │
+        ┌─────────────┬───────────────┼───────────────┬─────────────┐
+        │             │               │               │             │
+        ▼             ▼               ▼               ▼             ▼
+   ┌─────────┐   ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
+   │ Enroll  │   │   API   │    │  Portal │    │  Admin  │    │   API   │
+   │  :443   │   │  :443   │    │  :443   │    │  :443   │    │  :80    │
+   │         │   │         │    │         │    │         │    │Internal │
+   │10.1.1.  │   │10.1.1.  │    │10.1.1.  │    │10.1.1.  │    │10.255.  │
+   │  100    │   │  101    │    │  102    │    │  104    │    │255.255  │
+   └────┬────┘   └────┬────┘    └────┬────┘    └────┬────┘    └────┬────┘
+        │             │               │               │             │
+        ▼             ▼               ▼               ▼             ▼
+   ┌─────────┐   ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
+   │ irule_  │   │ irule_  │    │ irule_  │    │ irule_  │    │ irule_  │
+   │ totp_   │   │ totp_   │    │ idp_    │    │ totp_   │    │ totp_   │
+   │ enroll  │   │ api     │    │ mfa     │    │admin_ui │    │ api     │
+   └────┬────┘   └────┬────┘    └────┬────┘    └────┬────┘    └────┬────┘
+        │             │               │               │             │
+        └─────────────┴───────────────┴───────────────┴─────────────┘
+                                      │
+                                      ▼
+                         ┌───────────────────────┐
+                         │   irule_totp_shared   │
+                         │                       │
+                         │  • TOTP generation    │
+                         │  • Secret encryption  │
+                         │  • Rate limiting      │
+                         │  • Data access        │
+                         └───────────────────────┘
+                                      │
+                    ┌─────────────────┴─────────────────┐
+                    │                                   │
+                    ▼                                   ▼
+           ┌───────────────┐                   ┌───────────────┐
+           │  Subtables    │                   │  Data Groups  │
+           │  (Runtime)    │                   │  (Persistent) │
+           │               │                   │               │
+           │ • totp_users  │    ◄── sync ──►   │ • totp_       │
+           │ • totp_       │                   │   secrets_dg  │
+           │   ratelimit   │                   │ • totp_       │
+           │ • totp_enroll │                   │   config_dg   │
+           │   _ratelimit  │                   │               │
+           └───────────────┘                   └───────────────┘</div>
+
+<h2>2.2 Enrollment Flow</h2>
+<div class="diagram">     User                    BIG-IP                         Authenticator
+       │                        │                                 │
+       │  1. Access /enroll     │                                 │
+       ├───────────────────────►│                                 │
+       │                        │                                 │
+       │  2. Login prompt       │                                 │
+       │◄───────────────────────┤                                 │
+       │                        │                                 │
+       │  3. Credentials        │                                 │
+       ├───────────────────────►│                                 │
+       │                        │                                 │
+       │                        │ 4. Validate (LocalDB/AD)        │
+       │                        ├──────────────────┐              │
+       │                        │◄─────────────────┘              │
+       │                        │                                 │
+       │  5. QR Code Page       │                                 │
+       │◄───────────────────────┤                                 │
+       │                        │                                 │
+       │  6. Scan QR            │                                 │
+       ├────────────────────────┼────────────────────────────────►│
+       │                        │                                 │
+       │  7. Confirm code       │                                 │
+       ├───────────────────────►│                                 │
+       │                        │                                 │
+       │                        │ 8. Verify &amp; Store secret        │
+       │                        ├──────────────────┐              │
+       │                        │◄─────────────────┘              │
+       │                        │                                 │
+       │  9. Success            │                                 │
+       │◄───────────────────────┤                                 │</div>
+
+<h2>2.3 MFA Authentication Flow</h2>
+<div class="diagram">     User              Portal            HTTP AAA          Internal API       Storage
+       │                  │                  │                  │                │
+       │ 1. Access        │                  │                  │                │
+       │    portal        │                  │                  │                │
+       ├─────────────────►│                  │                  │                │
+       │                  │                  │                  │                │
+       │ 2. Login page    │                  │                  │                │
+       │◄─────────────────┤                  │                  │                │
+       │                  │                  │                  │                │
+       │ 3. Username +    │                  │                  │                │
+       │    Password      │                  │                  │                │
+       ├─────────────────►│                  │                  │                │
+       │                  │                  │                  │                │
+       │                  │ 4. Validate      │                  │                │
+       │                  │    (LocalDB/AD)  │                  │                │
+       │                  ├─────┐            │                  │                │
+       │                  │◄────┘            │                  │                │
+       │                  │                  │                  │                │
+       │                  │ 5. Check         │                  │                │
+       │                  │    enrolled      │                  │                │
+       │                  ├──────────────────────────────────►│                │
+       │                  │◄──────────────────────────────────┤                │
+       │                  │                  │                  │                │
+       │ 6. TOTP code     │                  │                  │                │
+       │    page          │                  │                  │                │
+       │◄─────────────────┤                  │                  │                │
+       │                  │                  │                  │                │
+       │ 7. Enter TOTP    │                  │                  │                │
+       │    code          │                  │                  │                │
+       ├─────────────────►│                  │                  │                │
+       │                  │                  │                  │                │
+       │                  │ 8. HTTP Auth     │ 9. Verify       │                │
+       │                  ├─────────────────►├─────────────────►│                │
+       │                  │                  │◄─────────────────┤                │
+       │                  │◄─────────────────┤                  │                │
+       │                  │                  │                  │                │
+       │ 10. Webtop       │                  │                  │                │
+       │◄─────────────────┤                  │                  │                │</div>
+
+<h2>2.4 Persistence Architecture</h2>
+<div class="diagram">                              Runtime (Fast)
+                    ┌───────────────────────────────┐
+                    │       totp_users subtable     │
+                    │                               │
+                    │  • In-memory (TMM)            │
+                    │  • Microsecond lookups        │
+                    │  • Lost on TMM restart        │
+                    │  • Indefinite TTL             │
+                    └───────────────────────────────┘
+                                   │
+                                   │ Lazy Load (on first access)
+                                   │ Persist (via alert script)
+                                   ▼
+                             Persistent (Durable)
+                    ┌───────────────────────────────┐
+                    │     totp_secrets_dg           │
+                    │     (Data Group)              │
+                    │                               │
+                    │  • Stored in bigip.conf       │
+                    │  • Survives restarts          │
+                    │  • Config-sync compatible     │
+                    │  • HA synchronized            │
+                    └───────────────────────────────┘</div>
+
+<h2>2.5 Rate Limiting</h2>
+<div class="diagram">Verification:  5 failed attempts per user per 5 minutes → lockout
+Enrollment:    3 failed confirmations per user per 10 minutes → lockout
+IP Throttle:   6 enrollment page loads per IP per 10 minutes → lockout
+
+All counters stored in subtables (TMM memory).
+Successful verification/enrollment resets the user's counter.
+Admin can reset via API or Admin UI.
+
+Rate limit parameters configurable in totp_config_dg data group.</div>
+
+<!-- Section 3: Prerequisites -->
+<h1 id="s3">3. Prerequisites</h1>
+
+<h2>3.1 Platform Requirements</h2>
+<table>
+<tr><th>Requirement</th><th>Minimum</th><th>Recommended</th></tr>
+<tr><td>TMOS Version</td><td>17.1.0</td><td>17.5.1.5</td></tr>
+<tr><td>Memory</td><td>8 GB (APM requirement)</td><td>16 GB</td></tr>
+<tr><td>Architecture</td><td>Virtual or Hardware</td><td>Any supported platform</td></tr>
+</table>
+
+<h2>3.2 Module Provisioning</h2>
+<p>Both APM and LTM must be provisioned at <code>nominal</code> level:</p>
+<pre><code># Verify current provisioning
+tmsh show sys provision | grep -E "ltm|apm"
+# Expected: ltm nominal / apm nominal
+
+# If not provisioned (requires reboot):
+tmsh modify sys provision ltm level nominal
+tmsh modify sys provision apm level nominal
+tmsh save sys config
+reboot</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>3.3 Time Synchronization (Critical for TOTP)</h2>
+<p>TOTP authentication is time-sensitive. A clock drift of more than 30 seconds will cause all TOTP codes to fail.</p>
+<pre><code># Configure NTP servers
+tmsh modify sys ntp servers replace-all-with { 0.pool.ntp.org 1.pool.ntp.org 2.pool.ntp.org }
+
+# Set timezone
+tmsh modify sys ntp timezone America/Toronto
+
+tmsh save sys config
+
+# Verify synchronization
+ntpq -p
+# Look for * indicating active sync source</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<div class="warn">If no server shows <code>*</code> after several minutes, check firewall rules for NTP (UDP 123) and verify DNS resolution.</div>
+
+<h2>3.4 DNS Configuration</h2>
+<pre><code># Configure DNS servers
+tmsh modify sys dns name-servers add { 10.1.1.10 10.1.1.11 }
+tmsh modify sys dns search add { mfa-demo.local }
+tmsh save sys config
+
+# Verify DNS resolution
+nslookup 0.pool.ntp.org</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>3.5 Pre-Deployment Checklist</h2>
+<ul class="checklist">
+<li>BIG-IP TMOS 17.1+ installed</li>
+<li>LTM provisioned at nominal level</li>
+<li>APM provisioned at nominal level</li>
+<li>APM license includes sufficient access sessions</li>
+<li>NTP configured and synchronized</li>
+<li>DNS servers configured</li>
+<li>SSH access confirmed</li>
+<li>GUI access confirmed</li>
+<li>IP addresses allocated for virtual servers</li>
+</ul>
+
+<!-- Section 4: Network Configuration -->
+<h1 id="s4">4. Network Configuration</h1>
+
+<h2>4.1 VLAN Configuration</h2>
+<pre><code># External VLAN for user-facing services
+tmsh create net vlan external interfaces add { 1.1 { untagged } } mtu 1500
+
+# Internal VLAN for non-routable API
+tmsh create net vlan internal interfaces add { 1.2 { untagged } } mtu 1500
+
+# HA VLAN (for HA deployments)
+tmsh create net vlan ha interfaces add { 1.3 { untagged } } mtu 1500</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>4.2 Self-IP Configuration</h2>
+<pre><code># External self-IP
+tmsh create net self external-self address 10.1.1.1/24 vlan external allow-service default
+
+# Internal self-IP
+tmsh create net self internal-self address 10.255.255.254/24 vlan internal allow-service default
+
+# HA self-IP (for HA deployments)
+tmsh create net self ha-self address 10.1.3.1/24 vlan ha allow-service default</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>4.3 Floating IPs (HA Deployments Only)</h2>
+<pre><code># External floating IP for virtual servers
+tmsh create net self external-floating address 10.1.1.2/24 vlan external traffic-group traffic-group-1 allow-service none</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>4.4 Default Route</h2>
+<pre><code>tmsh create net route default-route gw 10.1.1.254 network default
+tmsh save sys config</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>4.5 Virtual Server IP Allocation</h2>
+<table>
+<tr><th>Virtual Server</th><th>IP Address</th><th>Port</th><th>VLAN</th></tr>
+<tr><td>vs_totp_enroll</td><td>10.1.1.100</td><td>443</td><td>external</td></tr>
+<tr><td>vs_totp_api</td><td>10.1.1.101</td><td>443</td><td>external</td></tr>
+<tr><td>vs_mfa_portal</td><td>10.1.1.102</td><td>443</td><td>external</td></tr>
+<tr><td>vs_totp_admin</td><td>10.1.1.104</td><td>443</td><td>external</td></tr>
+<tr><td>vs_totp_api_internal</td><td>10.255.255.255</td><td>80</td><td>internal</td></tr>
+</table>
+
+<div class="info">The internal API VS (10.255.255.255) uses a non-routable address intentionally. It is only accessed by the APM HTTP Auth agent from the BIG-IP itself.</div>
+
+<!-- Section 5: SSL Certificates -->
+<h1 id="s5">5. SSL Certificates and Profiles</h1>
+
+<h2>5.1 Option A — Self-Signed ECC Certificate (Recommended)</h2>
+<pre><code>tmsh create sys crypto key mfa-ecc key-type ec-private curve-name secp384r1 gen-certificate \
+    common-name "*.mfa-demo.local" \
+    country "CA" \
+    state "Ontario" \
+    city "Toronto" \
+    organization "MFA Demo" \
+    ou "IT Security" \
+    lifetime 3650 \
+    subject-alternative-name "DNS:totp-enroll.mfa-demo.local,DNS:totp-api.mfa-demo.local,DNS:portal.mfa-demo.local,DNS:totp-admin.mfa-demo.local"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>5.2 Option B — Self-Signed RSA Certificate</h2>
+<pre><code>tmsh create sys crypto key mfa-rsa key-size 2048 gen-certificate \
+    common-name "*.mfa-demo.local" \
+    country "CA" \
+    state "Ontario" \
+    city "Toronto" \
+    organization "MFA Demo" \
+    ou "IT Security" \
+    lifetime 3650 \
+    subject-alternative-name "DNS:totp-enroll.mfa-demo.local,DNS:totp-api.mfa-demo.local,DNS:portal.mfa-demo.local,DNS:totp-admin.mfa-demo.local"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>5.3 Create Client SSL Profile</h2>
+<h3>For ECC Certificate:</h3>
+<pre><code>tmsh create ltm profile client-ssl mfa-clientssl defaults-from clientssl \
+    cert-key-chain add { mfa-ecc { cert mfa-ecc key mfa-ecc } }</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>For RSA Certificate:</h3>
+<pre><code>tmsh create ltm profile client-ssl mfa-clientssl defaults-from clientssl \
+    cert mfa-rsa key mfa-rsa</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<div class="note">ECC certificates use <code>cert-key-chain add { }</code> syntax. RSA certificates use flat <code>cert</code>/<code>key</code> syntax. Both require <code>defaults-from clientssl</code>.</div>
+
+<h2>5.4 Create Server SSL Profile</h2>
+<pre><code># For lab environments with self-signed certificates
+tmsh create ltm profile server-ssl mfa-serverssl defaults-from serverssl-insecure-compatible
+
+tmsh save sys config</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- Section 6: User Database -->
+<h1 id="s6">6. User Database Configuration</h1>
+
+<h2>6.1 Option A — Local DB (Lab/Testing)</h2>
+
+<h3>Create Local DB Instance</h3>
+<pre><code>tmsh create apm aaa local-db-instance mfa_users_db lockout-threshold 5 auto-unlock-interval 300</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Add Users with ldbutil</h3>
+<div class="warn">All parameters shown are mandatory for <code>--add</code>. Special characters must be escaped.</div>
+
+<pre><code># Add test user
+ldbutil --add --instance="/Common/mfa_users_db" \
+    --uname="testuser" \
+    --password="TestP@ss123!" \
+    --first_name="Test" \
+    --last_name="User" \
+    --email="testuser@mfa-demo.local" \
+    --user_groups="mfaUsers" \
+    --change_passwd="0" \
+    --login_failures="0" \
+    --locked_out="0"
+
+# Add admin user
+ldbutil --add --instance="/Common/mfa_users_db" \
+    --uname="admin1" \
+    --password="AdminP@ss123!" \
+    --first_name="Admin" \
+    --last_name="One" \
+    --email="admin1@mfa-demo.local" \
+    --user_groups="mfaAdmins,mfaUsers" \
+    --change_passwd="0" \
+    --login_failures="0" \
+    --locked_out="0"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Verify Users</h3>
+<pre><code># List all users
+ldbutil --list --instance="/Common/mfa_users_db"
+
+# Show specific user
+ldbutil --show --uname="testuser" --instance="/Common/mfa_users_db"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Modify and Delete Users</h3>
+<pre><code># Change password
+ldbutil --mod --instance="/Common/mfa_users_db" --uname="testuser" --password="NewP@ss456!"
+
+# Unlock user
+ldbutil --mod --instance="/Common/mfa_users_db" --uname="testuser" --locked_out="0" --login_failures="0"
+
+# Delete user
+ldbutil --del --instance="/Common/mfa_users_db" --uname="testuser"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>6.2 Option B — Active Directory (Production)</h2>
+
+<p>Configure AD AAA via GUI: <strong>Access → Authentication → Active Directory → Create</strong></p>
+
+<table>
+<tr><th>Field</th><th>Example Value</th></tr>
+<tr><td>Name</td><td>mfa_ad_aaa</td></tr>
+<tr><td>Domain Name</td><td>corp.example.com</td></tr>
+<tr><td>Server Connection</td><td>Direct</td></tr>
+<tr><td>Domain Controller</td><td>dc01.corp.example.com</td></tr>
+<tr><td>Admin Name</td><td>svc_bigip@corp.example.com</td></tr>
+<tr><td>Admin Password</td><td>(service account password)</td></tr>
+</table>
+
+<!-- Section 7: TOTP Infrastructure -->
+<h1 id="s7">7. TOTP Infrastructure — Data Groups and Alert Scripts</h1>
+
+<h2>7.1 Generate Secure Keys</h2>
+<pre><code># Generate 32-character encryption key (AES-256)
+TOTP_ENC_KEY=$(openssl rand -base64 32 | tr -d '\n' | cut -c1-32)
+
+# Generate API key (64 hex characters)
+TOTP_API_KEY=$(openssl rand -hex 32)
+
+echo "Encryption Key: $TOTP_ENC_KEY"
+echo "API Key: $TOTP_API_KEY"
+
+echo ""
+echo "=== SAVE BOTH VALUES SECURELY ==="</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<div class="warn">Back up the encryption key securely. If lost, all enrolled TOTP secrets become undecryptable and every user must re-enroll.</div>
+
+<h2>7.2 Create Data Groups</h2>
+<pre><code># Create secrets data group (starts empty)
+tmsh create ltm data-group internal totp_secrets_dg type string
+
+# Create configuration data group
+tmsh create ltm data-group internal totp_config_dg type string records add {
+    encryption_key { data "$TOTP_ENC_KEY" }
+    issuer { data "MFA Demo" }
+    api_key { data "$TOTP_API_KEY" }
+    secret_length { data "32" }
+    code_length { data "6" }
+    time_step { data "30" }
+    time_skew { data "1" }
+    rate_max_attempts { data "5" }
+    rate_window_seconds { data "300" }
+    enroll_rate_max_attempts { data "3" }
+    enroll_rate_window_seconds { data "600" }
+    encrypt_secrets { data "1" }
+}
+
+tmsh save sys config</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>7.3 Configuration Parameters Reference</h2>
+<table>
+<tr><th>Parameter</th><th>Default</th><th>Description</th></tr>
+<tr><td>encryption_key</td><td>(generated)</td><td>32-character AES-256 encryption key</td></tr>
+<tr><td>issuer</td><td>MFA Demo</td><td>Display name in authenticator apps</td></tr>
+<tr><td>api_key</td><td>(generated)</td><td>API authentication key</td></tr>
+<tr><td>secret_length</td><td>32</td><td>Base32 secret length (characters)</td></tr>
+<tr><td>code_length</td><td>6</td><td>TOTP code length (digits)</td></tr>
+<tr><td>time_step</td><td>30</td><td>TOTP interval (seconds)</td></tr>
+<tr><td>time_skew</td><td>1</td><td>Allowed time drift (±intervals)</td></tr>
+<tr><td>rate_max_attempts</td><td>5</td><td>Verification attempts before lockout</td></tr>
+<tr><td>rate_window_seconds</td><td>300</td><td>Verification lockout window</td></tr>
+<tr><td>enroll_rate_max_attempts</td><td>3</td><td>Enrollment attempts before lockout</td></tr>
+<tr><td>enroll_rate_window_seconds</td><td>600</td><td>Enrollment lockout window</td></tr>
+<tr><td>encrypt_secrets</td><td>1</td><td>Enable secret encryption (1=yes)</td></tr>
+</table>
+
+<h2>7.4 Create Alert Scripts Directory</h2>
+<pre><code>mkdir -p /config/totp</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>7.5 Create Enrollment Persistence Script</h2>
+<pre><code>cat &gt; /config/totp/totp_enroll.sh &lt;&lt; 'SCRIPT_EOF'
+#!/bin/bash
+#
+# totp_enroll.sh - Persist TOTP secret to data group on enrollment
+#
+# Triggered by: logger -p local0.alert "TOTP_ENROLL_TRIGGER:&lt;username&gt;"
+# Reads username from log, queries API for secret, updates data group
+#
+
+LOGFILE="/var/log/ltm"
+API_HOST="totp-api.mfa-demo.local"
+API_PORT="443"
+DG_NAME="totp_secrets_dg"
+
+# Get API key from config data group
+API_KEY=$(tmsh list ltm data-group internal totp_config_dg records 2&gt;/dev/null | grep -A1 "api_key" | grep "data" | awk '{print $2}' | tr -d '"')
+
+if [ -z "$API_KEY" ]; then
+    logger -p local0.err "totp_enroll: Failed to retrieve API key from totp_config_dg"
+    exit 1
+fi
+
+# Extract username from most recent trigger in log
+USERNAME=$(grep "TOTP_ENROLL_TRIGGER:" "$LOGFILE" | tail -1 | sed 's/.*TOTP_ENROLL_TRIGGER://' | awk '{print $1}')
+
+if [ -z "$USERNAME" ]; then
+    logger -p local0.err "totp_enroll: No username found in trigger"
+    exit 1
+fi
+
+# Query API for encrypted secret
+RESPONSE=$(curl -sk -H "X-API-Key: $API_KEY" \
+    "https://${API_HOST}:${API_PORT}/api/v1/export-secret?username=${USERNAME}" 2&gt;/dev/null)
+
+SECRET=$(echo "$RESPONSE" | grep -o '"secret":"[^"]*"' | cut -d'"' -f4)
+
+if [ -z "$SECRET" ]; then
+    logger -p local0.err "totp_enroll: Failed to retrieve secret for user $USERNAME"
+    exit 1
+fi
+
+# Update data group
+tmsh modify ltm data-group internal "$DG_NAME" records add { "$USERNAME" { data "$SECRET" } } 2&gt;/dev/null
+
+if [ $? -ne 0 ]; then
+    # Record may already exist, try modify
+    tmsh modify ltm data-group internal "$DG_NAME" records modify { "$USERNAME" { data "$SECRET" } } 2&gt;/dev/null
+    if [ $? -ne 0 ]; then
+        logger -p local0.err "totp_enroll: Failed to commit secret for user $USERNAME"
+        exit 1
+    fi
+fi
+
+# Save configuration
+tmsh save sys config partitions { Common } 2&gt;/dev/null
+logger -p local0.info "totp_enroll: Committed secret for user $USERNAME to $DG_NAME"
+
+exit 0
+SCRIPT_EOF
+
+chmod 700 /config/totp/totp_enroll.sh</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>7.6 Create Unenrollment Script</h2>
+<pre><code>cat &gt; /config/totp/totp_unenroll.sh &lt;&lt; 'SCRIPT_EOF'
+#!/bin/bash
+#
+# totp_unenroll.sh - Remove TOTP secret from data group on unenrollment
+#
+# Triggered by: logger -p local0.alert "TOTP_UNENROLL_TRIGGER:&lt;username&gt;"
+#
+
+LOGFILE="/var/log/ltm"
+DG_NAME="totp_secrets_dg"
+
+# Extract username from most recent trigger in log
+USERNAME=$(grep "TOTP_UNENROLL_TRIGGER:" "$LOGFILE" | tail -1 | sed 's/.*TOTP_UNENROLL_TRIGGER://' | awk '{print $1}')
+
+if [ -z "$USERNAME" ]; then
+    logger -p local0.err "totp_unenroll: No username found in trigger"
+    exit 1
+fi
+
+# Remove from data group
+tmsh modify ltm data-group internal "$DG_NAME" records delete { "$USERNAME" } 2&gt;/dev/null
+
+if [ $? -eq 0 ]; then
+    logger -p local0.info "totp_unenroll: Removed user $USERNAME from $DG_NAME"
+else
+    logger -p local0.warn "totp_unenroll: User $USERNAME not found in $DG_NAME"
+fi
+
+# Save configuration
+tmsh save sys config partitions { Common } 2&gt;/dev/null
+
+exit 0
+SCRIPT_EOF
+
+chmod 700 /config/totp/totp_unenroll.sh</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>7.7 Configure Alert Triggers</h2>
+<pre><code>cat &gt;&gt; /config/user_alert.conf &lt;&lt; 'EOF'
+alert TOTP_ENROLL_TRIGGER "TOTP_ENROLL_TRIGGER" {
+    exec command="/config/totp/totp_enroll.sh"
+}
+alert TOTP_UNENROLL_TRIGGER "TOTP_UNENROLL_TRIGGER" {
+    exec command="/config/totp/totp_unenroll.sh"
+}
+EOF
+
+# Restart alertd
+bigstart restart alertd</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>7.8 Test Alert Mechanism</h2>
+<pre><code># Test enrollment trigger
+logger -p local0.alert "TOTP_ENROLL_TRIGGER:testscript"
+sleep 2
+grep "totp_enroll" /var/log/ltm | tail -5
+
+# Test unenrollment trigger
+logger -p local0.alert "TOTP_UNENROLL_TRIGGER:testscript"
+sleep 2
+grep "totp_unenroll" /var/log/ltm | tail -5</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>7.9 Create QR Code iFile</h2>
+<pre><code># Copy qrcode.js to BIG-IP (see Appendix E for source)
+# scp ifiles/qrcode.js root@bigip.mfa-demo.local:/var/tmp/qrcode.js
+
+# Create the iFile objects
+tmsh create sys file ifile qrcode_js source-path file:///var/tmp/qrcode.js
+tmsh create ltm ifile qrcode_js file-name qrcode_js
+tmsh save sys config</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- Section 8: iRules -->
+<h1 id="s8">8. iRules — Complete Code Listings</h1>
+
+<p>Create iRules via GUI: <strong>Local Traffic → iRules → iRule List → Create</strong></p>
+<p>iRules must be created in order: <code>irule_totp_shared</code> first, as other iRules depend on its procedures.</p>
+
+<h2>8.1 irule_totp_shared</h2>
+<p>Shared procedures for TOTP operations. Attach FIRST on all TOTP virtual servers.</p>
+
+<pre><code># =============================================================================
+# iRule: irule_totp_shared
+# Purpose: Shared procedures for TOTP operations
+# Attach FIRST on: vs_totp_enroll, vs_totp_api, vs_totp_api_internal,
+#                  vs_mfa_portal, vs_totp_admin
+# =============================================================================
+
+# ---- Configuration Data Group Name ----
+proc totp_config_dg_name {} { return "totp_config_dg" }
+
+# ---- Subtable and Data Group Names ----
+proc totp_users_subtable {} { return "totp_users" }
+proc totp_rate_subtable {} { return "totp_ratelimit" }
+proc totp_enroll_rate_subtable {} { return "totp_enroll_ratelimit" }
+proc totp_secrets_dg_name {} { return "totp_secrets_dg" }
+
+# ---- Config Lookups ----
+proc totp_get_api_key {} {
+    set k [class match -value "api_key" equals [call totp_config_dg_name]]
+    if { $k eq "" } { log local0.err "TOTP: api_key not found" }
+    return $k
+}
+
+proc totp_get_encryption_key {} {
+    set k [class match -value "encryption_key" equals [call totp_config_dg_name]]
+    if { $k eq "" } { log local0.err "TOTP: encryption_key not found" }
+    return $k
+}
+
+proc totp_get_issuer {} {
+    set v [class match -value "issuer" equals [call totp_config_dg_name]]
+    if { $v eq "" } { return "MFA Demo" }
+    return $v
+}
+
+proc totp_get_period {} {
+    set v [class match -value "time_step" equals [call totp_config_dg_name]]
+    if { $v ne "" } { return $v }
+    return 30
+}
+
+proc totp_get_window {} {
+    set v [class match -value "time_skew" equals [call totp_config_dg_name]]
+    if { $v ne "" } { return $v }
+    return 1
+}
+
+proc totp_rate_get_max {} {
+    set v [class match -value "rate_max_attempts" equals [call totp_config_dg_name]]
+    if { $v ne "" } { return $v }
+    return 5
+}
+
+proc totp_rate_get_window {} {
+    set v [class match -value "rate_window_seconds" equals [call totp_config_dg_name]]
+    if { $v ne "" } { return $v }
+    return 300
+}
+
+proc totp_enroll_rate_get_max {} {
+    set v [class match -value "enroll_rate_max_attempts" equals [call totp_config_dg_name]]
+    if { $v ne "" } { return $v }
+    return 3
+}
+
+proc totp_enroll_rate_get_window {} {
+    set v [class match -value "enroll_rate_window_seconds" equals [call totp_config_dg_name]]
+    if { $v ne "" } { return $v }
+    return 600
+}
+
+# ---- Two-Tier Secret Lookup (Lazy Loading) ----
+proc totp_lookup_secret { username } {
+    set u [string tolower $username]
+    # Try subtable first (fast path)
+    set c [table lookup -subtable [call totp_users_subtable] $u]
+    if { $c ne "" } { return $c }
+    # Fall back to data group (slow path)
+    set s [class match -value $u equals [call totp_secrets_dg_name]]
+    if { $s ne "" } {
+        # Cache in subtable for future requests
+        table set -subtable [call totp_users_subtable] $u $s indefinite indefinite
+        return $s
+    }
+    return ""
+}
+
+proc totp_is_enrolled { username } {
+    if { [call totp_lookup_secret $username] ne "" } { return 1 }
+    return 0
+}
+
+proc totp_store_secret { username encrypted_secret } {
+    set u [string tolower $username]
+    table set -subtable [call totp_users_subtable] $u $encrypted_secret indefinite indefinite
+    log local0.alert "TOTP_ENROLL_TRIGGER:${u}"
+    log local0.info "TOTP: Stored $u in subtable, triggered commit"
+}
+
+proc totp_delete_secret { username } {
+    set u [string tolower $username]
+    table delete -subtable [call totp_users_subtable] $u
+    log local0.alert "TOTP_UNENROLL_TRIGGER:${u}"
+    log local0.info "TOTP: Deleted $u from subtable, triggered removal"
+}
+
+# ---- Encryption / Decryption ----
+proc totp_encrypt_secret { plaintext } {
+    set k [call totp_get_encryption_key]
+    if { $k eq "" } { return "" }
+    if { [catch {
+        set e [CRYPTO::encrypt -alg aes-256-ecb -key [b64decode $k] $plaintext]
+    } err] } {
+        log local0.err "TOTP: Encrypt failed: $err"
+        return ""
+    }
+    return $e
+}
+
+proc totp_decrypt_secret { ciphertext } {
+    set k [call totp_get_encryption_key]
+    if { $k eq "" } { return "" }
+    if { [catch {
+        set d [CRYPTO::decrypt -alg aes-256-ecb -key [b64decode $k] $ciphertext]
+    } err] } {
+        log local0.err "TOTP: Decrypt failed: $err"
+        return ""
+    }
+    return $d
+}
+
+# ---- Binary/Integer Conversion (Tcl 8.5 Compatible) ----
+proc bits_to_int { bits } {
+    set result 0
+    foreach bit [split $bits ""] {
+        set result [expr { ($result &lt;&lt; 1) | $bit }]
+    }
+    return $result
+}
+
+proc int_to_bits { num width } {
+    set bits ""
+    for { set i [expr {$width - 1}] } { $i &gt;= 0 } { incr i -1 } {
+        append bits [expr { ($num &gt;&gt; $i) &amp; 1 }]
+    }
+    return $bits
+}
+
+# ---- Base32 Encode / Decode ----
+proc totp_base32_decode { b32_string } {
+    set alphabet "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+    set bits ""
+    set clean [string trimright [string toupper $b32_string] "="]
+    foreach char [split $clean ""] {
+        set idx [string first $char $alphabet]
+        if { $idx &lt; 0 } { continue }
+        append bits [call int_to_bits $idx 5]
+    }
+    set bytes ""
+    set bitlen [string length $bits]
+    for { set i 0 } { [expr { $i + 7 }] &lt; $bitlen } { incr i 8 } {
+        set byte_bits [string range $bits $i [expr { $i + 7 }]]
+        append bytes [format %c [call bits_to_int $byte_bits]]
+    }
+    return $bytes
+}
+
+proc totp_bytes_to_base32 { bytes } {
+    set alphabet "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+    set b32 ""
+    set bits ""
+    foreach byte [split $bytes ""] {
+        binary scan $byte c signed_val
+        set unsigned_val [expr { $signed_val &amp; 0xff }]
+        append bits [call int_to_bits $unsigned_val 8]
+    }
+    set bitlen [string length $bits]
+    set pad [expr { (5 - ($bitlen % 5)) % 5 }]
+    append bits [string repeat "0" $pad]
+    for { set i 0 } { $i &lt; [string length $bits] } { incr i 5 } {
+        set chunk [string range $bits $i [expr { $i + 4 }]]
+        set idx [call bits_to_int $chunk]
+        append b32 [string index $alphabet $idx]
+    }
+    return $b32
+}
+
+proc totp_generate_secret {} {
+    set rb [AES::key 256]
+    return [call totp_bytes_to_base32 [string range $rb 0 19]]
+}
+
+# ---- HOTP / TOTP ----
+proc totp_compute_hotp { secret_bytes counter } {
+    # Format counter as 8-byte big-endian
+    set high [expr { ($counter &gt;&gt; 32) &amp; 0xffffffff }]
+    set low [expr { $counter &amp; 0xffffffff }]
+    set cb [binary format II $high $low]
+    
+    set hmac [CRYPTO::sign -alg hmac-sha1 -key $secret_bytes $cb]
+    binary scan $hmac H* hx
+    
+    # Get offset from last nibble
+    scan [string range $hx end end] %x last_nibble
+    set off [expr { $last_nibble &amp; 0x0f }]
+    set s [expr { $off * 2 }]
+    
+    # Extract 4 bytes and compute code
+    scan [string range $hx $s [expr { $s + 7 }]] %x dbc
+    return [format %06d [expr { ($dbc &amp; 0x7fffffff) % 1000000 }]]
+}
+
+proc totp_verify_raw { secret_b32 code } {
+    set sb [call totp_base32_decode $secret_b32]
+    set now [clock seconds]
+    set period [call totp_get_period]
+    set window [call totp_get_window]
+    for { set i [expr { -1 * $window }] } { $i &lt;= $window } { incr i } {
+        set ctr [expr { ($now + ($i * $period)) / $period }]
+        if { $code eq [call totp_compute_hotp $sb $ctr] } { return 1 }
+    }
+    return 0
+}
+
+# ---- Verification Rate Limiting ----
+proc totp_rate_is_blocked { username } {
+    set u [string tolower $username]
+    set key "rate_${u}"
+    set max [call totp_rate_get_max]
+    set subtable [call totp_rate_subtable]
+    set c [table lookup -subtable $subtable $key]
+    if { $c ne "" &amp;&amp; $c &gt;= $max } {
+        set r [table timeout -subtable $subtable -remaining $key]
+        log local0.warn "TOTP_RATE:BLOCKED:${u}:attempts=${c},max=${max},remaining=${r}s"
+        return 1
+    }
+    return 0
+}
+
+proc totp_rate_increment { username } {
+    set u [string tolower $username]
+    set key "rate_${u}"
+    set max [call totp_rate_get_max]
+    set window [call totp_rate_get_window]
+    set subtable [call totp_rate_subtable]
+    set c [table lookup -subtable $subtable $key]
+    if { $c eq "" } {
+        table set -subtable $subtable $key 1 $window $window
+        log local0.info "TOTP_RATE:ATTEMPT:${u}:attempt=1,max=${max}"
+        return 1
+    }
+    set nc [expr { $c + 1 }]
+    set r [table timeout -subtable $subtable -remaining $key]
+    if { $r &lt; 1 } { set r $window }
+    table set -subtable $subtable $key $nc $r $r
+    if { $nc &gt;= $max } {
+        log local0.alert "TOTP_RATE:LOCKOUT:${u}:attempts=${nc},max=${max},locked_for=${r}s"
+    } else {
+        log local0.info "TOTP_RATE:ATTEMPT:${u}:attempt=${nc},max=${max}"
+    }
+    return $nc
+}
+
+proc totp_rate_reset { username } {
+    set u [string tolower $username]
+    set key "rate_${u}"
+    set subtable [call totp_rate_subtable]
+    table delete -subtable $subtable $key
+    log local0.info "TOTP_RATE:RESET:${u}"
+}
+
+proc totp_rate_remaining { username } {
+    set u [string tolower $username]
+    set key "rate_${u}"
+    set max [call totp_rate_get_max]
+    set subtable [call totp_rate_subtable]
+    set c [table lookup -subtable $subtable $key]
+    if { $c ne "" &amp;&amp; $c &gt;= $max } {
+        return [table timeout -subtable $subtable -remaining $key]
+    }
+    return 0
+}
+
+proc totp_rate_get_count { username } {
+    set u [string tolower $username]
+    set subtable [call totp_rate_subtable]
+    set c [table lookup -subtable $subtable "rate_${u}"]
+    if { $c eq "" } { return 0 }
+    return $c
+}
+
+# ---- Enrollment Rate Limiting ----
+proc totp_enroll_rate_is_blocked { username } {
+    set u [string tolower $username]
+    set key "enroll_${u}"
+    set max [call totp_enroll_rate_get_max]
+    set subtable [call totp_enroll_rate_subtable]
+    set c [table lookup -subtable $subtable $key]
+    if { $c ne "" &amp;&amp; $c &gt;= $max } {
+        return 1
+    }
+    return 0
+}
+
+proc totp_enroll_rate_increment { username } {
+    set u [string tolower $username]
+    set key "enroll_${u}"
+    set max [call totp_enroll_rate_get_max]
+    set window [call totp_enroll_rate_get_window]
+    set subtable [call totp_enroll_rate_subtable]
+    set c [table lookup -subtable $subtable $key]
+    if { $c eq "" } {
+        table set -subtable $subtable $key 1 $window $window
+        return 1
+    }
+    set nc [expr { $c + 1 }]
+    set r [table timeout -subtable $subtable -remaining $key]
+    if { $r &lt; 1 } { set r $window }
+    table set -subtable $subtable $key $nc $r $r
+    if { $nc &gt;= $max } {
+        log local0.alert "TOTP_ENROLL_RATE:LOCKOUT:${u}:attempts=${nc}"
+    }
+    return $nc
+}
+
+proc totp_enroll_rate_reset { username } {
+    set u [string tolower $username]
+    set key "enroll_${u}"
+    set subtable [call totp_enroll_rate_subtable]
+    table delete -subtable $subtable $key
+}
+
+proc totp_enroll_rate_remaining { username } {
+    set u [string tolower $username]
+    set key "enroll_${u}"
+    set max [call totp_enroll_rate_get_max]
+    set subtable [call totp_enroll_rate_subtable]
+    set c [table lookup -subtable $subtable $key]
+    if { $c ne "" &amp;&amp; $c &gt;= $max } {
+        return [table timeout -subtable $subtable -remaining $key]
+    }
+    return 0
+}
+
+proc totp_enroll_rate_get_count { username } {
+    set u [string tolower $username]
+    set subtable [call totp_enroll_rate_subtable]
+    set c [table lookup -subtable $subtable "enroll_${u}"]
+    if { $c eq "" } { return 0 }
+    return $c
+}
+
+# ---- Rate-Limited TOTP Verification ----
+proc totp_verify_code_rated { username code } {
+    set u [string tolower $username]
+    if { [call totp_rate_is_blocked $username] } { return "rate_limited" }
+    set an [call totp_rate_increment $username]
+    set enc [call totp_lookup_secret $username]
+    if { $enc eq "" } { return "not_enrolled" }
+    set sec [call totp_decrypt_secret $enc]
+    if { $sec eq "" } { return "decrypt_error" }
+    if { [call totp_verify_raw $sec $code] } {
+        call totp_rate_reset $username
+        return "success"
+    }
+    return "invalid_code"
+}
+
+# ---- Bulk Rate Reset ----
+proc totp_rate_bulk_reset { admin_info } {
+    set vc 0
+    set ec 0
+    set rate_st [call totp_rate_subtable]
+    set enroll_st [call totp_enroll_rate_subtable]
+    foreach key [table keys -subtable $rate_st] {
+        table delete -subtable $rate_st $key
+        incr vc
+    }
+    foreach key [table keys -subtable $enroll_st] {
+        table delete -subtable $enroll_st $key
+        incr ec
+    }
+    set t [expr { $vc + $ec }]
+    log local0.notice "TOTP_RATE:BULK_RESET:verify=${vc},enroll=${ec},admin=${admin_info}"
+    return [list $vc $ec $t]
+}
+
+# ---- Branding CSS ----
+proc brand_get_css {} {
+    set css "*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}"
+    append css "body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"
+    append css "display:flex;justify-content:center;align-items:center;min-height:100vh;"
+    append css "background:#0d1117;color:#c9d1d9}"
+    append css ".card{background:#161b22;border:1px solid #30363d;border-radius:12px;"
+    append css "padding:40px;max-width:520px;width:92%;text-align:center;"
+    append css "box-shadow:0 8px 24px rgba(0,0,0,.4)}"
+    append css "h1{color:#58a6ff;margin-bottom:8px;font-size:1.5em}"
+    append css ".sub{color:#8b949e;margin-bottom:24px}"
+    append css ".qr{background:#fff;display:inline-block;padding:16px;border-radius:8px;margin:20px 0}"
+    append css ".secret{background:#0d1117;border:1px solid #30363d;border-radius:8px;"
+    append css "padding:14px;margin:14px 0;font-family:monospace;font-size:1.1em;"
+    append css "letter-spacing:3px;word-break:break-all;color:#f0883e}"
+    append css "input\[type=text\]{background:#0d1117;border:1px solid #30363d;"
+    append css "color:#c9d1d9;padding:12px 16px;border-radius:8px;font-size:1.2em;"
+    append css "text-align:center;letter-spacing:8px;width:200px}"
+    append css "button{background:#238636;color:#fff;border:none;padding:12px 32px;"
+    append css "border-radius:8px;font-size:1em;cursor:pointer;margin-top:8px}"
+    append css "button:hover{background:#2ea043}"
+    append css ".warn-bar{background:#da3633;color:#fff;padding:8px 16px;border-radius:6px;margin:10px 0}"
+    return $css
+}
+
+proc brand_get_status_css {} {
+    set css "body{font-family:sans-serif;display:flex;justify-content:center;"
+    append css "align-items:center;min-height:100vh;margin:0;background:#0d1117;color:#c9d1d9}"
+    append css ".c{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:48px;max-width:480px;text-align:center}"
+    append css ".m{color:#fff;padding:14px 24px;border-radius:8px;margin:24px 0}"
+    append css "a{color:#58a6ff;text-decoration:none}"
+    return $css
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>8.2 irule_totp_enroll</h2>
+<p>Handles enrollment page, QR code display, and enrollment confirmation.</p>
+
+<pre><code># =============================================================================
+# iRule: irule_totp_enroll
+# Virtual Server: vs_totp_enroll (10.1.1.100:443)
+# Requires: irule_totp_shared attached first
+# =============================================================================
+
+proc enroll_page { label secret otpauth attempts_info } {
+    set p "&lt;!DOCTYPE html&gt;&lt;html lang=\"en\"&gt;&lt;head&gt;&lt;meta charset=\"utf-8\"&gt;"
+    append p "&lt;meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"&gt;"
+    append p "&lt;title&gt;TOTP Enrollment&lt;/title&gt;"
+    append p "&lt;style&gt;[call irule_totp_shared::brand_get_css]&lt;/style&gt;"
+    append p "&lt;/head&gt;&lt;body&gt;&lt;div class=\"card\"&gt;"
+    append p "&lt;h1&gt;&amp;#x1F511; TOTP Enrollment&lt;/h1&gt;"
+    append p "&lt;p class=\"sub\"&gt;Multi-Factor Authentication Setup&lt;/p&gt;"
+    append p "&lt;p style=\"color:#58a6ff;font-weight:700\"&gt;Account: $label&lt;/p&gt;"
+    if { $attempts_info ne "" } {
+        append p "&lt;div class=\"warn-bar\"&gt;$attempts_info&lt;/div&gt;"
+    }
+    append p "&lt;div class=\"qr\"&gt;&lt;canvas id=\"qr\"&gt;&lt;/canvas&gt;&lt;/div&gt;"
+    append p "&lt;p style=\"color:#8b949e;font-size:.9em\"&gt;Scan with your authenticator app&lt;/p&gt;"
+    append p "&lt;div class=\"secret\"&gt;&lt;small style=\"color:#8b949e;display:block;margin-bottom:8px\"&gt;Manual Entry Key:&lt;/small&gt;$secret&lt;/div&gt;"
+    append p "&lt;ol style=\"text-align:left;background:#0d1117;border-radius:8px;padding:14px 14px 14px 32px;margin:14px 0\"&gt;"
+    append p "&lt;li style=\"color:#8b949e;margin:6px 0\"&gt;Open your authenticator app&lt;/li&gt;"
+    append p "&lt;li style=\"color:#8b949e;margin:6px 0\"&gt;Scan the QR code or enter the key manually&lt;/li&gt;"
+    append p "&lt;li style=\"color:#8b949e;margin:6px 0\"&gt;Enter the 6-digit code below to confirm&lt;/li&gt;&lt;/ol&gt;"
+    append p "&lt;form method=\"POST\" action=\"/enroll/confirm\"&gt;&lt;div style=\"margin:16px 0\"&gt;"
+    append p "&lt;input type=\"text\" name=\"totp_code\" maxlength=\"6\" pattern=\"\\\[0-9\\\]{6}\" placeholder=\"000000\" required autocomplete=\"off\"&gt;"
+    append p "&lt;/div&gt;&lt;button type=\"submit\"&gt;Verify and Complete Enrollment&lt;/button&gt;&lt;/form&gt;&lt;/div&gt;"
+    append p "&lt;script src=\"/public/qrcode.js\"&gt;&lt;/script&gt;"
+    append p "&lt;script&gt;renderQR('qr','$otpauth',6);&lt;/script&gt;"
+    append p "&lt;/body&gt;&lt;/html&gt;"
+    return $p
+}
+
+proc enroll_status { title icon bg msg link ltxt } {
+    set p "&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;title&gt;$title&lt;/title&gt;"
+    append p "&lt;style&gt;[call irule_totp_shared::brand_get_status_css]&lt;/style&gt;"
+    append p "&lt;/head&gt;&lt;body&gt;&lt;div class=\"c\"&gt;"
+    append p "&lt;h1 style=\"color:$bg;margin-bottom:16px\"&gt;$icon $title&lt;/h1&gt;"
+    append p "&lt;div class=\"m\" style=\"background:$bg\"&gt;$msg&lt;/div&gt;"
+    if { $link ne "" } { append p "&lt;a href=\"$link\"&gt;$ltxt&lt;/a&gt;" }
+    append p "&lt;/div&gt;&lt;/body&gt;&lt;/html&gt;"
+    return $p
+}
+
+when HTTP_REQUEST {
+    set uri [HTTP::path]
+    set method [HTTP::method]
+    set username [ACCESS::session data get "session.logon.last.username"]
+
+    # Serve QR JavaScript from iFile
+    if { $uri eq "/public/qrcode.js" } {
+        HTTP::respond 200 content [ifile get "qrcode_js"] \
+            "Content-Type" "application/javascript" \
+            "Cache-Control" "public, max-age=86400"
+        return
+    }
+
+    # GET /enroll
+    if { $uri eq "/enroll" &amp;&amp; $method eq "GET" } {
+        if { $username eq "" } {
+            HTTP::respond 403 content "Access denied" "Content-Type" "text/plain"
+            return
+        }
+        if { [call irule_totp_shared::totp_enroll_rate_is_blocked $username] } {
+            set r [call irule_totp_shared::totp_enroll_rate_remaining $username]
+            HTTP::respond 200 content [call enroll_status "Enrollment Locked" \
+                "&amp;#x1F512;" "#da3633" "Too many failures. Try again in $r seconds." "" ""] \
+                "Content-Type" "text/html; charset=utf-8" "Cache-Control" "no-store"
+            return
+        }
+        if { [call irule_totp_shared::totp_is_enrolled $username] } {
+            set p "&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;title&gt;Already Enrolled&lt;/title&gt;"
+            append p "&lt;style&gt;[call irule_totp_shared::brand_get_status_css]&lt;/style&gt;"
+            append p "&lt;/head&gt;&lt;body&gt;&lt;div class=\"c\"&gt;"
+            append p "&lt;h1 style=\"color:#1a7f37;margin-bottom:16px\"&gt;&amp;#x1F512; Already Enrolled&lt;/h1&gt;"
+            append p "&lt;div class=\"m\" style=\"background:#1a7f37\"&gt;Your account is enrolled in TOTP MFA.&lt;/div&gt;"
+            append p "&lt;p style=\"color:#8b949e\"&gt;Need to replace your authenticator?&lt;/p&gt;"
+            append p "&lt;a href=\"/reenroll\" style=\"color:#f0883e;border:1px solid #f0883e;padding:10px 24px;border-radius:8px;display:inline-block;margin-top:16px\"&gt;&amp;#x1F504; Re-enroll&lt;/a&gt;"
+            append p "&lt;/div&gt;&lt;/body&gt;&lt;/html&gt;"
+            HTTP::respond 200 content $p "Content-Type" "text/html; charset=utf-8" "Cache-Control" "no-store"
+            return
+        }
+        set secret [call irule_totp_shared::totp_generate_secret]
+        ACCESS::session data set "session.custom.totp.enroll_secret" $secret
+        set issuer [call irule_totp_shared::totp_get_issuer]
+        set label "${username}@[call irule_totp_shared::totp_get_issuer]"
+        set otpauth "otpauth://totp/${label}?secret=${secret}&amp;issuer=${issuer}&amp;algorithm=SHA1&amp;digits=6&amp;period=30"
+        set ac [call irule_totp_shared::totp_enroll_rate_get_count $username]
+        set mx [call irule_totp_shared::totp_enroll_rate_get_max]
+        set ai ""
+        if { $ac &gt; 0 } { set ai "You have [expr {$mx - $ac}] confirmation attempt(s) remaining." }
+        log local0.info "TOTP-ENROLL: Page shown for $username"
+        HTTP::respond 200 content [call enroll_page $label $secret $otpauth $ai] \
+            "Content-Type" "text/html; charset=utf-8" "Cache-Control" "no-store"
+        return
+    }
+
+    # POST /enroll/confirm
+    if { $uri eq "/enroll/confirm" &amp;&amp; $method eq "POST" } {
+        if { $username eq "" } {
+            HTTP::respond 403 content "Access denied" "Content-Type" "text/plain"
+            return
+        }
+        set cl 0
+        catch { set cl [HTTP::header value "Content-Length"] }
+        if { $cl &gt; 0 &amp;&amp; $cl &lt; 1024 } {
+            HTTP::collect $cl
+        } else {
+            HTTP::redirect "/enroll"
+        }
+        return
+    }
+
+    # GET /enroll/complete
+    if { $uri eq "/enroll/complete" } {
+        HTTP::respond 200 content [call enroll_status "Enrollment Complete!" \
+            "&amp;#x2705;" "#1a7f37" "TOTP MFA is now active." "" ""] \
+            "Content-Type" "text/html; charset=utf-8" "Cache-Control" "no-store"
+        return
+    }
+
+    # GET /reenroll - re-enrollment flow
+    if { $uri eq "/reenroll" &amp;&amp; $method eq "GET" } {
+        if { $username eq "" } {
+            HTTP::respond 403 content "Access denied" "Content-Type" "text/plain"
+            return
+        }
+        if { ![call irule_totp_shared::totp_is_enrolled $username] } {
+            HTTP::redirect "/enroll"
+            return
+        }
+        # Show verification page for current TOTP
+        set p "&lt;!DOCTYPE html&gt;&lt;html lang=\"en\"&gt;&lt;head&gt;&lt;meta charset=\"utf-8\"&gt;"
+        append p "&lt;meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"&gt;"
+        append p "&lt;title&gt;TOTP Re-enrollment&lt;/title&gt;"
+        append p "&lt;style&gt;[call irule_totp_shared::brand_get_css] h1{color:#f0883e}&lt;/style&gt;"
+        append p "&lt;/head&gt;&lt;body&gt;&lt;div class=\"card\"&gt;"
+        append p "&lt;h1&gt;&amp;#x1F504; TOTP Re-enrollment&lt;/h1&gt;"
+        append p "&lt;p class=\"sub\"&gt;Replace your authenticator setup&lt;/p&gt;"
+        append p "&lt;p style=\"color:#58a6ff;font-weight:700\"&gt;Account: $username&lt;/p&gt;"
+        append p "&lt;div style=\"background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:14px;margin:14px 0;text-align:left;color:#8b949e\"&gt;"
+        append p "&lt;strong&gt;Security verification required&lt;/strong&gt;&lt;br&gt;"
+        append p "Enter a valid code from your &lt;em&gt;current&lt;/em&gt; authenticator app.&lt;/div&gt;"
+        append p "&lt;form method=\"POST\" action=\"/reenroll/verify\"&gt;&lt;div style=\"margin:16px 0\"&gt;"
+        append p "&lt;input type=\"text\" name=\"current_code\" maxlength=\"6\" pattern=\"\\\[0-9\\\]{6}\" placeholder=\"000000\" required autocomplete=\"off\"&gt;"
+        append p "&lt;/div&gt;&lt;button type=\"submit\" style=\"background:#f0883e\"&gt;Verify Current Code&lt;/button&gt;&lt;/form&gt;"
+        append p "&lt;a href=\"/enroll\" style=\"display:block;margin-top:16px;color:#58a6ff\"&gt;&amp;#x2190; Back&lt;/a&gt;"
+        append p "&lt;/div&gt;&lt;/body&gt;&lt;/html&gt;"
+        HTTP::respond 200 content $p "Content-Type" "text/html; charset=utf-8" "Cache-Control" "no-store"
+        return
+    }
+
+    # POST /reenroll/verify
+    if { $uri eq "/reenroll/verify" &amp;&amp; $method eq "POST" } {
+        if { $username eq "" } {
+            HTTP::respond 403 content "Access denied" "Content-Type" "text/plain"
+            return
+        }
+        set cl 0
+        catch { set cl [HTTP::header value "Content-Length"] }
+        if { $cl &gt; 0 &amp;&amp; $cl &lt; 1024 } {
+            ACCESS::session data set "session.custom.totp.reenroll_step" "verify"
+            HTTP::collect $cl
+        } else {
+            HTTP::redirect "/reenroll"
+        }
+        return
+    }
+
+    HTTP::redirect "/enroll"
+}
+
+when HTTP_REQUEST_DATA {
+    set payload [HTTP::payload]
+    set username [ACCESS::session data get "session.logon.last.username"]
+    set rs [ACCESS::session data get "session.custom.totp.reenroll_step"]
+
+    # Re-enrollment: verify current code
+    if { $rs eq "verify" } {
+        ACCESS::session data set "session.custom.totp.reenroll_step" ""
+        if { $username eq "" } {
+            HTTP::respond 403 content "Access denied" "Content-Type" "text/plain"
+            return
+        }
+        set cc ""
+        foreach pair [split $payload "&amp;"] {
+            set kv [split $pair "="]
+            if { [lindex $kv 0] eq "current_code" } {
+                set cc [string trim [lindex $kv 1]]
+            }
+        }
+        set cc [string map {" " "" "-" ""} $cc]
+        if { ![regexp {^[0-9]{6}$} $cc] } {
+            HTTP::respond 200 content [call enroll_status "Invalid Code" "&amp;#x274C;" "#da3633" \
+                "Enter exactly 6 digits." "/reenroll" "&amp;#x2190; Try Again"] \
+                "Content-Type" "text/html; charset=utf-8"
+            return
+        }
+        set enc [call irule_totp_shared::totp_lookup_secret $username]
+        if { $enc eq "" } {
+            HTTP::redirect "/enroll"
+            return
+        }
+        set cs [call irule_totp_shared::totp_decrypt_secret $enc]
+        if { $cs eq "" } {
+            HTTP::respond 200 content [call enroll_status "Error" "&amp;#x274C;" "#da3633" \
+                "Internal error." "/reenroll" "&amp;#x2190; Try Again"] \
+                "Content-Type" "text/html; charset=utf-8"
+            return
+        }
+        if { [call irule_totp_shared::totp_verify_raw $cs $cc] } {
+            # Generate new secret and show QR
+            set ns [call irule_totp_shared::totp_generate_secret]
+            ACCESS::session data set "session.custom.totp.reenroll_new_secret" $ns
+            ACCESS::session data set "session.custom.totp.reenroll_verified" "yes"
+            set issuer [call irule_totp_shared::totp_get_issuer]
+            set label "${username}@${issuer}"
+            set otpauth "otpauth://totp/${label}?secret=${ns}&amp;issuer=${issuer}&amp;algorithm=SHA1&amp;digits=6&amp;period=30"
+            
+            set p "&lt;!DOCTYPE html&gt;&lt;html lang=\"en\"&gt;&lt;head&gt;&lt;meta charset=\"utf-8\"&gt;"
+            append p "&lt;meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"&gt;"
+            append p "&lt;title&gt;New TOTP Setup&lt;/title&gt;"
+            append p "&lt;style&gt;[call irule_totp_shared::brand_get_css] h1{color:#f0883e}&lt;/style&gt;"
+            append p "&lt;/head&gt;&lt;body&gt;&lt;div class=\"card\"&gt;"
+            append p "&lt;h1&gt;&amp;#x1F504; New TOTP Setup&lt;/h1&gt;"
+            append p "&lt;p class=\"sub\"&gt;Scan the new QR code&lt;/p&gt;"
+            append p "&lt;div style=\"background:#f0883e;color:#fff;padding:10px 16px;border-radius:6px;margin:14px 0\"&gt;"
+            append p "&amp;#x26A0; Previous authenticator entry stops working after you confirm.&lt;/div&gt;"
+            append p "&lt;div class=\"qr\"&gt;&lt;canvas id=\"qr\"&gt;&lt;/canvas&gt;&lt;/div&gt;"
+            append p "&lt;div class=\"secret\"&gt;&lt;small style=\"color:#8b949e;display:block;margin-bottom:8px\"&gt;Manual Entry Key:&lt;/small&gt;$ns&lt;/div&gt;"
+            append p "&lt;form method=\"POST\" action=\"/reenroll/confirm\"&gt;&lt;div style=\"margin:16px 0\"&gt;"
+            append p "&lt;input type=\"text\" name=\"totp_code\" maxlength=\"6\" pattern=\"\\\[0-9\\\]{6}\" placeholder=\"000000\" required autocomplete=\"off\"&gt;"
+            append p "&lt;/div&gt;&lt;button type=\"submit\"&gt;Verify New Code&lt;/button&gt;&lt;/form&gt;&lt;/div&gt;"
+            append p "&lt;script src=\"/public/qrcode.js\"&gt;&lt;/script&gt;"
+            append p "&lt;script&gt;renderQR('qr','$otpauth',6);&lt;/script&gt;"
+            append p "&lt;/body&gt;&lt;/html&gt;"
+            HTTP::respond 200 content $p "Content-Type" "text/html; charset=utf-8" "Cache-Control" "no-store"
+        } else {
+            HTTP::respond 200 content [call enroll_status "Invalid Code" "&amp;#x274C;" "#da3633" \
+                "Wrong code. Try again." "/reenroll" "&amp;#x2190; Try Again"] \
+                "Content-Type" "text/html; charset=utf-8"
+        }
+        return
+    }
+
+    # Re-enrollment: confirm new code (POST /reenroll/confirm)
+    if { [HTTP::path] eq "/reenroll/confirm" } {
+        if { $username eq "" } {
+            HTTP::respond 403 content "Access denied" "Content-Type" "text/plain"
+            return
+        }
+        set ns [ACCESS::session data get "session.custom.totp.reenroll_new_secret"]
+        set vf [ACCESS::session data get "session.custom.totp.reenroll_verified"]
+        if { $ns eq "" || $vf ne "yes" } {
+            HTTP::respond 200 content [call enroll_status "Session Expired" "&amp;#x274C;" "#da3633" \
+                "Please start re-enrollment again." "/reenroll" "&amp;#x2190; Start Over"] \
+                "Content-Type" "text/html; charset=utf-8"
+            return
+        }
+        set tc ""
+        foreach pair [split $payload "&amp;"] {
+            set kv [split $pair "="]
+            if { [lindex $kv 0] eq "totp_code" } {
+                set tc [string trim [lindex $kv 1]]
+            }
+        }
+        set tc [string map {" " "" "-" ""} $tc]
+        if { ![regexp {^[0-9]{6}$} $tc] } {
+            HTTP::respond 200 content [call enroll_status "Invalid Code" "&amp;#x274C;" "#da3633" \
+                "Enter exactly 6 digits." "/reenroll" "&amp;#x2190; Try Again"] \
+                "Content-Type" "text/html; charset=utf-8"
+            return
+        }
+        if { [call irule_totp_shared::totp_verify_raw $ns $tc] } {
+            set encrypted [call irule_totp_shared::totp_encrypt_secret $ns]
+            if { $encrypted eq "" } {
+                HTTP::respond 200 content [call enroll_status "Error" "&amp;#x274C;" "#da3633" \
+                    "Internal error." "/reenroll" "&amp;#x2190; Try Again"] \
+                    "Content-Type" "text/html; charset=utf-8"
+                return
+            }
+            call irule_totp_shared::totp_store_secret $username $encrypted
+            ACCESS::session data set "session.custom.totp.reenroll_new_secret" ""
+            ACCESS::session data set "session.custom.totp.reenroll_verified" ""
+            log local0.info "TOTP-REENROLL: Complete for $username"
+            HTTP::respond 200 content [call enroll_status "Re-enrollment Complete!" \
+                "&amp;#x2705;" "#1a7f37" "Your TOTP authenticator has been replaced." "" ""] \
+                "Content-Type" "text/html; charset=utf-8" "Cache-Control" "no-store"
+        } else {
+            HTTP::respond 200 content [call enroll_status "Invalid Code" "&amp;#x274C;" "#da3633" \
+                "Wrong code. Try again." "/reenroll" "&amp;#x2190; Try Again"] \
+                "Content-Type" "text/html; charset=utf-8"
+        }
+        return
+    }
+
+    # Original enrollment confirm
+    set secret [ACCESS::session data get "session.custom.totp.enroll_secret"]
+    if { $username eq "" || $secret eq "" } {
+        HTTP::respond 200 content [call enroll_status "Session Expired" "&amp;#x274C;" "#da3633" \
+            "Please start enrollment again." "/enroll" "&amp;#x2190; Start Over"] \
+            "Content-Type" "text/html; charset=utf-8"
+        return
+    }
+    if { [call irule_totp_shared::totp_enroll_rate_is_blocked $username] } {
+        set r [call irule_totp_shared::totp_enroll_rate_remaining $username]
+        HTTP::respond 200 content [call enroll_status "Enrollment Locked" "&amp;#x1F512;" "#da3633" \
+            "Try again in $r seconds." "" ""] \
+            "Content-Type" "text/html; charset=utf-8"
+        return
+    }
+    set tc ""
+    foreach pair [split $payload "&amp;"] {
+        set kv [split $pair "="]
+        if { [lindex $kv 0] eq "totp_code" } {
+            set tc [string trim [lindex $kv 1]]
+        }
+    }
+    set tc [string map {" " "" "-" ""} $tc]
+    if { ![regexp {^[0-9]{6}$} $tc] } {
+        call irule_totp_shared::totp_enroll_rate_increment $username
+        HTTP::respond 200 content [call enroll_status "Invalid Code" "&amp;#x274C;" "#da3633" \
+            "Enter exactly 6 digits." "/enroll" "&amp;#x2190; Try Again"] \
+            "Content-Type" "text/html; charset=utf-8"
+        return
+    }
+    set an [call irule_totp_shared::totp_enroll_rate_increment $username]
+    if { [call irule_totp_shared::totp_verify_raw $secret $tc] } {
+        set encrypted [call irule_totp_shared::totp_encrypt_secret $secret]
+        if { $encrypted eq "" } {
+            HTTP::respond 200 content [call enroll_status "Error" "&amp;#x274C;" "#da3633" \
+                "Internal error." "/enroll" "&amp;#x2190; Try Again"] \
+                "Content-Type" "text/html; charset=utf-8"
+            return
+        }
+        call irule_totp_shared::totp_store_secret $username $encrypted
+        ACCESS::session data set "session.custom.totp.enroll_secret" ""
+        call irule_totp_shared::totp_enroll_rate_reset $username
+        log local0.info "TOTP-ENROLL: Complete for $username"
+        HTTP::redirect "/enroll/complete"
+    } else {
+        set mx [call irule_totp_shared::totp_enroll_rate_get_max]
+        set ra [expr { $mx - $an }]
+        if { $ra &lt; 0 } { set ra 0 }
+        log local0.warn "TOTP-ENROLL: Invalid code $username ($an/$mx)"
+        if { $ra &gt; 0 } {
+            HTTP::respond 200 content [call enroll_status "Invalid Code" "&amp;#x274C;" "#da3633" \
+                "Wrong code. $ra attempt(s) remaining." "/enroll" "&amp;#x2190; Return to Enrollment"] \
+                "Content-Type" "text/html; charset=utf-8"
+        } else {
+            set lt [call irule_totp_shared::totp_enroll_rate_remaining $username]
+            HTTP::respond 200 content [call enroll_status "Enrollment Locked" "&amp;#x1F512;" "#da3633" \
+                "Try again in $lt seconds." "" ""] \
+                "Content-Type" "text/html; charset=utf-8"
+        }
+    }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>8.3 irule_totp_api</h2>
+<p>REST API for TOTP verification and management.</p>
+
+<pre><code># =============================================================================
+# iRule: irule_totp_api
+# Virtual Servers: vs_totp_api (10.1.1.101:443), vs_totp_api_internal (10.255.255.255:80)
+# Requires: irule_totp_shared attached first
+# =============================================================================
+
+proc api_json { status body } {
+    HTTP::respond $status content $body \
+        "Content-Type" "application/json" \
+        "Cache-Control" "no-store" \
+        "X-Content-Type-Options" "nosniff"
+}
+
+proc api_json_retry { status body ra } {
+    HTTP::respond $status content $body \
+        "Content-Type" "application/json" \
+        "Cache-Control" "no-store" \
+        "X-Content-Type-Options" "nosniff" \
+        "Retry-After" $ra
+}
+
+proc api_dispatch_result { result username } {
+    set ul [string tolower $username]
+    switch $result {
+        "success" {
+            call api_json 200 "\{\"success\":true,\"username\":\"$ul\"\}"
+        }
+        "not_enrolled" {
+            call api_json 401 "\{\"success\":false,\"username\":\"$ul\",\"error\":\"not_enrolled\"\}"
+        }
+        "decrypt_error" {
+            call api_json 500 "\{\"success\":false,\"error\":\"internal_error\"\}"
+        }
+        "invalid_code" {
+            set mx [call irule_totp_shared::totp_rate_get_max]
+            set ra [expr { $mx - [call irule_totp_shared::totp_rate_get_count $username] }]
+            if { $ra &lt; 0 } { set ra 0 }
+            call api_json 401 "\{\"success\":false,\"username\":\"$ul\",\"error\":\"invalid_code\",\"remaining_attempts\":$ra\}"
+        }
+        "rate_limited" {
+            set r [call irule_totp_shared::totp_rate_remaining $username]
+            call api_json_retry 429 "\{\"success\":false,\"username\":\"$ul\",\"error\":\"rate_limited\",\"retry_after\":$r\}" $r
+        }
+    }
+}
+
+when HTTP_REQUEST {
+    set path [HTTP::path]
+    set meth [HTTP::method]
+    
+    # API key validation
+    set ek [call irule_totp_shared::totp_get_api_key]
+    set pk [HTTP::header value "X-API-Key"]
+    
+    if { $ek eq "" } {
+        call api_json 500 "\{\"error\":\"server_misconfiguration\"\}"
+        event disable all
+        return
+    }
+    if { $pk ne $ek } {
+        call api_json 401 "\{\"error\":\"unauthorized\",\"message\":\"Invalid or missing API key\"\}"
+        event disable all
+        return
+    }
+
+    # GET /api/v1/health
+    if { $path eq "/api/v1/health" } {
+        call api_json 200 "\{\"status\":\"ok\"\}"
+        event disable all
+        return
+    }
+
+    # GET /api/v1/check?username=...
+    if { $path eq "/api/v1/check" } {
+        set u [URI::query [HTTP::uri] "username"]
+        if { $u eq "" } {
+            call api_json 400 "\{\"error\":\"missing_username\"\}"
+            event disable all
+            return
+        }
+        set ul [string tolower $u]
+        if { [call irule_totp_shared::totp_is_enrolled $u] } {
+            call api_json 200 "\{\"enrolled\":true,\"username\":\"$ul\"\}"
+        } else {
+            call api_json 200 "\{\"enrolled\":false,\"username\":\"$ul\"\}"
+        }
+        event disable all
+        return
+    }
+
+    # GET /api/v1/status?username=...
+    if { $path eq "/api/v1/status" } {
+        set u [URI::query [HTTP::uri] "username"]
+        if { $u eq "" } {
+            call api_json 400 "\{\"error\":\"missing_username\"\}"
+            event disable all
+            return
+        }
+        set ul [string tolower $u]
+        set c [call irule_totp_shared::totp_rate_get_count $u]
+        set b [call irule_totp_shared::totp_rate_is_blocked $u]
+        set r [call irule_totp_shared::totp_rate_remaining $u]
+        set mx [call irule_totp_shared::totp_rate_get_max]
+        set remaining [expr { $mx - $c }]
+        if { $remaining &lt; 0 } { set remaining 0 }
+        call api_json 200 "\{\"username\":\"$ul\",\"attempts\":$c,\"max_attempts\":$mx,\"remaining\":$remaining,\"blocked\":$b,\"retry_after\":$r\}"
+        event disable all
+        return
+    }
+
+    # GET /api/v1/verify?username=...&amp;code=...
+    if { $path eq "/api/v1/verify" &amp;&amp; $meth eq "GET" } {
+        set u [URI::query [HTTP::uri] "username"]
+        set c [URI::query [HTTP::uri] "code"]
+        if { $u eq "" || $c eq "" } {
+            call api_json 400 "\{\"error\":\"missing_parameters\"\}"
+            event disable all
+            return
+        }
+        set c [string map {" " "" "-" ""} [string trim $c]]
+        if { ![regexp {^[0-9]{6}$} $c] } {
+            call api_json 400 "\{\"error\":\"invalid_code_format\"\}"
+            event disable all
+            return
+        }
+        call api_dispatch_result [call irule_totp_shared::totp_verify_code_rated $u $c] $u
+        event disable all
+        return
+    }
+
+    # POST /api/v1/verify
+    if { $path eq "/api/v1/verify" &amp;&amp; $meth eq "POST" } {
+        set cl 0
+        catch { set cl [HTTP::header value "Content-Length"] }
+        if { $cl &gt; 0 &amp;&amp; $cl &lt; 4096 } {
+            HTTP::collect $cl
+        } else {
+            call api_json 400 "\{\"error\":\"invalid_content_length\"\}"
+            event disable all
+        }
+        return
+    }
+
+    # POST /api/v1/rate-reset?username=...
+    if { $path eq "/api/v1/rate-reset" &amp;&amp; $meth eq "POST" } {
+        set u [URI::query [HTTP::uri] "username"]
+        if { $u eq "" } {
+            call api_json 400 "\{\"error\":\"missing_username\"\}"
+            event disable all
+            return
+        }
+        call irule_totp_shared::totp_rate_reset $u
+        call api_json 200 "\{\"success\":true,\"username\":\"[string tolower $u]\",\"message\":\"Rate limit reset\"\}"
+        event disable all
+        return
+    }
+
+    # POST /api/v1/rate-reset-all
+    if { $path eq "/api/v1/rate-reset-all" &amp;&amp; $meth eq "POST" } {
+        set c [call irule_totp_shared::totp_rate_bulk_reset "api_client=[IP::client_addr]"]
+        call api_json 200 "\{\"success\":true,\"message\":\"All rate limits cleared\",\"cleared\":\{\"verify\":[lindex $c 0],\"enroll\":[lindex $c 1],\"total\":[lindex $c 2]\}\}"
+        event disable all
+        return
+    }
+
+    # GET /api/v1/export-secret?username=...
+    if { $path eq "/api/v1/export-secret" } {
+        set u [URI::query [HTTP::uri] "username"]
+        if { $u eq "" } {
+            call api_json 400 "\{\"error\":\"missing_username\"\}"
+            event disable all
+            return
+        }
+        set ul [string tolower $u]
+        set s [call irule_totp_shared::totp_lookup_secret $u]
+        if { $s eq "" } {
+            call api_json 404 "\{\"error\":\"not_found\",\"username\":\"$ul\"\}"
+        } else {
+            call api_json 200 "\{\"username\":\"$ul\",\"secret\":\"$s\"\}"
+        }
+        event disable all
+        return
+    }
+
+    # POST /api/v1/populate-table
+    if { $path eq "/api/v1/populate-table" &amp;&amp; $meth eq "POST" } {
+        set dg_name [call irule_totp_shared::totp_secrets_dg_name]
+        set subtable [call irule_totp_shared::totp_users_subtable]
+        set count 0
+        foreach record [class names $dg_name] {
+            set secret [class match -value $record equals $dg_name]
+            if { $secret ne "" } {
+                table set -subtable $subtable $record $secret indefinite indefinite
+                incr count
+            }
+        }
+        log local0.info "TOTP: Populated subtable with $count users from $dg_name"
+        call api_json 200 "\{\"success\":true,\"message\":\"Table populated\",\"users_loaded\":$count\}"
+        event disable all
+        return
+    }
+
+    call api_json 404 "\{\"error\":\"not_found\"\}"
+    event disable all
+}
+
+when HTTP_REQUEST_DATA {
+    set payload [HTTP::payload]
+    set ct [HTTP::header value "Content-Type"]
+    set u ""
+    set c ""
+    
+    if { [string match -nocase "*json*" $ct] } {
+        regexp {"username"\s*:\s*"([^"]*)"} $payload -&gt; u
+        regexp {"code"\s*:\s*"([^"]*)"} $payload -&gt; c
+    } else {
+        foreach pair [split $payload "&amp;"] {
+            set kv [split $pair "="]
+            switch -- [URI::decode [lindex $kv 0]] {
+                "username" { set u [URI::decode [lindex $kv 1]] }
+                "code" { set c [URI::decode [lindex $kv 1]] }
+            }
+        }
+    }
+    
+    if { $u eq "" || $c eq "" } {
+        call api_json 400 "\{\"error\":\"missing_parameters\"\}"
+        return
+    }
+    set c [string map {" " "" "-" ""} [string trim $c]]
+    if { ![regexp {^[0-9]{6}$} $c] } {
+        call api_json 400 "\{\"error\":\"invalid_code_format\"\}"
+        return
+    }
+    if { ![regexp {^[a-zA-Z0-9._@-]+$} $u] } {
+        call api_json 400 "\{\"error\":\"invalid_username\"\}"
+        return
+    }
+    call api_dispatch_result [call irule_totp_shared::totp_verify_code_rated $u $c] $u
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>8.4 irule_idp_mfa</h2>
+<p>MFA portal integration for enrollment checking and session management.</p>
+
+<pre><code># =============================================================================
+# iRule: irule_idp_mfa
+# Virtual Server: vs_mfa_portal (10.1.1.102:443)
+# Requires: irule_totp_shared attached first
+# =============================================================================
+
+when ACCESS_POLICY_AGENT_EVENT {
+    set event_id [ACCESS::policy agent_id]
+    
+    if { $event_id eq "check_totp_enrollment" } {
+        set username [ACCESS::session data get "session.logon.last.username"]
+        if { $username eq "" } {
+            ACCESS::session data set "session.custom.totp_enrolled" 0
+            log local0.info "MFA|[ACCESS::session sid]:No username, setting enrolled=0"
+            return
+        }
+        if { [call irule_totp_shared::totp_is_enrolled $username] } {
+            ACCESS::session data set "session.custom.totp_enrolled" 1
+            log local0.info "MFA|[ACCESS::session sid]:User $username is enrolled"
+        } else {
+            ACCESS::session data set "session.custom.totp_enrolled" 0
+            log local0.info "MFA|[ACCESS::session sid]:User $username not enrolled"
+        }
+    }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>8.5 irule_totp_admin_ui</h2>
+<p>Administration interface for user management and rate limit control.</p>
+
+<pre><code># =============================================================================
+# iRule: irule_totp_admin_ui
+# Virtual Server: vs_totp_admin (10.1.1.104:443)
+# Requires: irule_totp_shared attached first
+# =============================================================================
+
+proc admin_page { content } {
+    set p "&lt;!DOCTYPE html&gt;&lt;html lang=\"en\"&gt;&lt;head&gt;&lt;meta charset=\"utf-8\"&gt;"
+    append p "&lt;meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"&gt;"
+    append p "&lt;title&gt;TOTP Admin&lt;/title&gt;"
+    append p "&lt;style&gt;"
+    append p "body{font-family:-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;margin:0;padding:20px}"
+    append p ".container{max-width:1000px;margin:0 auto}"
+    append p "h1{color:#58a6ff;border-bottom:1px solid #30363d;padding-bottom:16px}"
+    append p ".card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;margin:16px 0}"
+    append p "table{width:100%;border-collapse:collapse;margin:12px 0}"
+    append p "th{background:#21262d;color:#58a6ff;padding:12px;text-align:left;border:1px solid #30363d}"
+    append p "td{padding:10px 12px;border:1px solid #30363d}"
+    append p "tr:nth-child(even){background:#161b22}"
+    append p ".btn{background:#238636;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;text-decoration:none;display:inline-block;margin:2px}"
+    append p ".btn:hover{background:#2ea043}"
+    append p ".btn-warn{background:#da3633}.btn-warn:hover{background:#b62324}"
+    append p ".btn-info{background:#1f6feb}.btn-info:hover{background:#388bfd}"
+    append p ".stat{display:inline-block;background:#21262d;padding:16px 24px;border-radius:8px;margin:8px;text-align:center}"
+    append p ".stat-val{font-size:2em;color:#58a6ff;font-weight:700}"
+    append p ".stat-lbl{color:#8b949e;font-size:.9em}"
+    append p "nav{margin-bottom:20px}nav a{color:#58a6ff;margin-right:20px;text-decoration:none}"
+    append p "&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;div class=\"container\"&gt;"
+    append p "&lt;h1&gt;&amp;#x1F511; TOTP Administration&lt;/h1&gt;"
+    append p "&lt;nav&gt;&lt;a href=\"/\"&gt;Dashboard&lt;/a&gt;&lt;a href=\"/users\"&gt;Users&lt;/a&gt;&lt;a href=\"/rate-limits\"&gt;Rate Limits&lt;/a&gt;&lt;/nav&gt;"
+    append p $content
+    append p "&lt;/div&gt;&lt;/body&gt;&lt;/html&gt;"
+    return $p
+}
+
+when HTTP_REQUEST {
+    set path [HTTP::path]
+    set meth [HTTP::method]
+
+    # Dashboard
+    if { $path eq "/" || $path eq "" } {
+        set dg_name [call irule_totp_shared::totp_secrets_dg_name]
+        set user_count 0
+        foreach record [class names $dg_name] {
+            incr user_count
+        }
+        set rate_st [call irule_totp_shared::totp_rate_subtable]
+        set rate_count 0
+        foreach key [table keys -subtable $rate_st] {
+            incr rate_count
+        }
+        
+        set content "&lt;div class=\"card\"&gt;&lt;h2&gt;System Status&lt;/h2&gt;"
+        append content "&lt;div class=\"stat\"&gt;&lt;div class=\"stat-val\"&gt;$user_count&lt;/div&gt;&lt;div class=\"stat-lbl\"&gt;Enrolled Users&lt;/div&gt;&lt;/div&gt;"
+        append content "&lt;div class=\"stat\"&gt;&lt;div class=\"stat-val\"&gt;$rate_count&lt;/div&gt;&lt;div class=\"stat-lbl\"&gt;Rate Limited&lt;/div&gt;&lt;/div&gt;"
+        append content "&lt;/div&gt;"
+        append content "&lt;div class=\"card\"&gt;&lt;h2&gt;Quick Actions&lt;/h2&gt;"
+        append content "&lt;a class=\"btn\" href=\"/users\"&gt;View Users&lt;/a&gt; "
+        append content "&lt;a class=\"btn btn-info\" href=\"/rate-limits\"&gt;View Rate Limits&lt;/a&gt; "
+        append content "&lt;form method=\"POST\" action=\"/rate-reset-all\" style=\"display:inline\"&gt;"
+        append content "&lt;button class=\"btn btn-warn\" type=\"submit\" onclick=\"return confirm('Reset ALL rate limits?')\"&gt;Reset All Rate Limits&lt;/button&gt;&lt;/form&gt;"
+        append content "&lt;/div&gt;"
+        
+        HTTP::respond 200 content [call admin_page $content] "Content-Type" "text/html; charset=utf-8"
+        return
+    }
+
+    # Users list
+    if { $path eq "/users" } {
+        set dg_name [call irule_totp_shared::totp_secrets_dg_name]
+        set content "&lt;div class=\"card\"&gt;&lt;h2&gt;Enrolled Users&lt;/h2&gt;&lt;table&gt;&lt;tr&gt;&lt;th&gt;Username&lt;/th&gt;&lt;th&gt;Actions&lt;/th&gt;&lt;/tr&gt;"
+        foreach record [class names $dg_name] {
+            append content "&lt;tr&gt;&lt;td&gt;$record&lt;/td&gt;&lt;td&gt;"
+            append content "&lt;form method=\"POST\" action=\"/unenroll\" style=\"display:inline\"&gt;"
+            append content "&lt;input type=\"hidden\" name=\"username\" value=\"$record\"&gt;"
+            append content "&lt;button class=\"btn btn-warn\" type=\"submit\" onclick=\"return confirm('Unenroll $record?')\"&gt;Unenroll&lt;/button&gt;&lt;/form&gt;"
+            append content "&lt;/td&gt;&lt;/tr&gt;"
+        }
+        append content "&lt;/table&gt;&lt;/div&gt;"
+        HTTP::respond 200 content [call admin_page $content] "Content-Type" "text/html; charset=utf-8"
+        return
+    }
+
+    # Rate limits
+    if { $path eq "/rate-limits" } {
+        set rate_st [call irule_totp_shared::totp_rate_subtable]
+        set content "&lt;div class=\"card\"&gt;&lt;h2&gt;Verification Rate Limits&lt;/h2&gt;&lt;table&gt;&lt;tr&gt;&lt;th&gt;User&lt;/th&gt;&lt;th&gt;Attempts&lt;/th&gt;&lt;th&gt;Remaining&lt;/th&gt;&lt;th&gt;Actions&lt;/th&gt;&lt;/tr&gt;"
+        foreach key [table keys -subtable $rate_st] {
+            set c [table lookup -subtable $rate_st $key]
+            set r [table timeout -subtable $rate_st -remaining $key]
+            set u [string range $key 5 end]
+            append content "&lt;tr&gt;&lt;td&gt;$u&lt;/td&gt;&lt;td&gt;$c&lt;/td&gt;&lt;td&gt;${r}s&lt;/td&gt;&lt;td&gt;"
+            append content "&lt;form method=\"POST\" action=\"/rate-reset\" style=\"display:inline\"&gt;"
+            append content "&lt;input type=\"hidden\" name=\"username\" value=\"$u\"&gt;"
+            append content "&lt;button class=\"btn btn-info\" type=\"submit\"&gt;Reset&lt;/button&gt;&lt;/form&gt;"
+            append content "&lt;/td&gt;&lt;/tr&gt;"
+        }
+        append content "&lt;/table&gt;&lt;/div&gt;"
+        HTTP::respond 200 content [call admin_page $content] "Content-Type" "text/html; charset=utf-8"
+        return
+    }
+
+    # POST handlers
+    if { $meth eq "POST" } {
+        set cl 0
+        catch { set cl [HTTP::header value "Content-Length"] }
+        if { $cl &gt; 0 &amp;&amp; $cl &lt; 4096 } {
+            HTTP::collect $cl
+        }
+        return
+    }
+
+    HTTP::redirect "/"
+}
+
+when HTTP_REQUEST_DATA {
+    set payload [HTTP::payload]
+    set path [HTTP::path]
+    
+    # Parse form data
+    set username ""
+    foreach pair [split $payload "&amp;"] {
+        set kv [split $pair "="]
+        if { [lindex $kv 0] eq "username" } {
+            set username [URI::decode [lindex $kv 1]]
+        }
+    }
+
+    # Rate reset single user
+    if { $path eq "/rate-reset" &amp;&amp; $username ne "" } {
+        call irule_totp_shared::totp_rate_reset $username
+        log local0.info "ADMIN: Rate reset for $username"
+        HTTP::redirect "/rate-limits"
+        return
+    }
+
+    # Rate reset all
+    if { $path eq "/rate-reset-all" } {
+        call irule_totp_shared::totp_rate_bulk_reset "admin_ui"
+        log local0.info "ADMIN: Bulk rate reset"
+        HTTP::redirect "/"
+        return
+    }
+
+    # Unenroll user
+    if { $path eq "/unenroll" &amp;&amp; $username ne "" } {
+        call irule_totp_shared::totp_delete_secret $username
+        log local0.info "ADMIN: Unenrolled $username"
+        HTTP::redirect "/users"
+        return
+    }
+
+    HTTP::redirect "/"
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- Section 9: Enrollment VS -->
+<h1 id="s9">9. TOTP Enrollment Virtual Server</h1>
+
+<h2>9.1 Create HTTP Profile</h2>
+<pre><code>tmsh create ltm profile http http_totp_enroll defaults-from http</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>9.2 Create Access Profile</h2>
+<pre><code>tmsh create apm profile access ap_totp_enroll accept-languages add { en } default-language en type all</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>9.3 Configure Access Policy (VPE)</h2>
+<ol>
+<li>Navigate to <strong>Access → Profiles / Policies → Access Profiles</strong></li>
+<li>Click <strong>Edit</strong> for <code>ap_totp_enroll</code></li>
+<li>Build the following flow:</li>
+</ol>
+
+<div class="diagram">Start ──► Logon Page ──► LocalDB Auth ──► Allow
+                              │
+                              │ Failure
+                              ▼
+                            Deny</div>
+
+<h3>Add Logon Page</h3>
+<table>
+<tr><th>Field</th><th>Value</th></tr>
+<tr><td>Row 1 Type</td><td>text</td></tr>
+<tr><td>Row 1 Post Variable</td><td>username</td></tr>
+<tr><td>Row 1 Session Variable</td><td>session.logon.last.username</td></tr>
+<tr><td>Row 2 Type</td><td>password</td></tr>
+<tr><td>Row 2 Post Variable</td><td>password</td></tr>
+<tr><td>Row 2 Session Variable</td><td>session.logon.last.password</td></tr>
+</table>
+
+<h3>Add LocalDB Auth</h3>
+<table>
+<tr><th>Field</th><th>Value</th></tr>
+<tr><td>LocalDB Instance</td><td>/Common/mfa_users_db</td></tr>
+</table>
+
+<p>Set Successful branch to <strong>Allow</strong>, Failure branch to <strong>Deny</strong>. Click <strong>Apply Access Policy</strong>.</p>
+
+<h2>9.4 Create Virtual Server</h2>
+<pre><code>tmsh create ltm virtual vs_totp_enroll \
+    destination 10.1.1.100:443 \
+    ip-protocol tcp \
+    profiles replace-all-with { mfa-clientssl { context clientside } http_totp_enroll tcp } \
+    source-address-translation { type automap } \
+    rules { irule_totp_shared irule_totp_enroll }
+
+# Attach access profile
+tmsh modify ltm virtual vs_totp_enroll profiles add { ap_totp_enroll }
+
+tmsh save sys config</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- Section 10: API VS -->
+<h1 id="s10">10. TOTP Verification API</h1>
+
+<h2>10.1 Create HTTP Profile</h2>
+<pre><code>tmsh create ltm profile http http_totp_api defaults-from http</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>10.2 Create External API Virtual Server</h2>
+<pre><code>tmsh create ltm virtual vs_totp_api \
+    destination 10.1.1.101:443 \
+    ip-protocol tcp \
+    profiles replace-all-with { mfa-clientssl { context clientside } http_totp_api tcp } \
+    source-address-translation { type automap } \
+    rules { irule_totp_shared irule_totp_api }</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>10.3 Create Internal API Virtual Server</h2>
+<pre><code>tmsh create ltm virtual vs_totp_api_internal \
+    destination 10.255.255.255:80 \
+    ip-protocol tcp \
+    profiles replace-all-with { http_totp_api tcp } \
+    source-address-translation { type automap } \
+    rules { irule_totp_shared irule_totp_api }
+
+tmsh save sys config</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<div class="info">The internal VS uses <code>10.255.255.255:80</code> — a non-routable address that cannot be reached externally. No SSL needed since traffic stays within TMM. This VS is used by the APM HTTP Auth agent.</div>
+
+<h2>10.4 Verify API</h2>
+<pre><code># Get API key
+API_KEY=$(tmsh list ltm data-group internal totp_config_dg records | grep -A1 "api_key" | grep "data" | awk '{print $2}' | tr -d '"')
+
+# Test health endpoint
+curl -sk -H "X-API-Key: $API_KEY" https://totp-api.mfa-demo.local:443/api/v1/health
+# Expected: {"status":"ok"}
+
+# Test internal endpoint
+curl -s -H "X-API-Key: $API_KEY" http://10.255.255.255:80/api/v1/health
+# Expected: {"status":"ok"}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- Section 11: MFA Portal -->
+<h1 id="s11">11. MFA Portal Configuration</h1>
+
+<h2>11.1 Create HTTP AAA Object (GUI Only)</h2>
+<p>Navigate to: <strong>Access → Authentication → HTTP → Create</strong></p>
+
+<table>
+<tr><th>Field</th><th>Value</th></tr>
+<tr><td>Name</td><td>http_aaa_totp_verify</td></tr>
+<tr><td>Authentication Type</td><td>Custom Post</td></tr>
+<tr><td>Start URI</td><td>http://10.255.255.255:80</td></tr>
+<tr><td>Form Action</td><td>/api/v1/verify</td></tr>
+<tr><td>Form Parameter For User Name</td><td>username</td></tr>
+<tr><td>Form Parameter For Password</td><td>code</td></tr>
+<tr><td>Custom Post Body</td><td><code>username=%{session.logon.last.username}&amp;code=%{session.logon.last.totp_code}</code></td></tr>
+<tr><td>Successful Logon Detection Match Type</td><td>By Specific String in Response</td></tr>
+<tr><td>Successful Logon Detection Match Value</td><td><code>"success":true</code></td></tr>
+</table>
+
+<h2>11.2 Create HTTP Profile</h2>
+<pre><code>tmsh create ltm profile http http_mfa_portal defaults-from http</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>11.3 Create Access Profile</h2>
+<pre><code>tmsh create apm profile access ap_mfa_portal accept-languages add { en } default-language en type all</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h2>11.4 Configure Access Policy (VPE)</h2>
+<div class="diagram">Start ──► Logon Page ──► LocalDB Auth ──► iRule Event ──► Branch
+                              │                    │
+                              │                    ├── Enrolled ──► TOTP Logon ──► HTTP Auth ──► Allow
+                              │                    │
+                              │                    └── Not Enrolled ──► Redirect to Enrollment
+                              │
+                              └── Failure ──► Deny</div>
+
+<h3>Step 1: Add Logon Page</h3>
+<p>Configure username and password fields as in Section 9.3.</p>
+
+<h3>Step 2: Add LocalDB Auth</h3>
+<p>Select <code>/Common/mfa_users_db</code>.</p>
+
+<h3>Step 3: Add iRule Event</h3>
+<p>On the Successful branch after LocalDB Auth:</p>
+<ol>
+<li>Click <strong>(+)</strong> and select <strong>iRule Event</strong> from General Purpose tab</li>
+<li>Set Name to <code>Check Enrollment</code></li>
+<li>Set ID to <code>check_totp_enrollment</code></li>
+</ol>
+
+<h3>Step 4: Add Empty Action with Branch Rules</h3>
+<ol>
+<li>After iRule Event, add <strong>Empty</strong> action</li>
+<li>Click <strong>Branch Rules</strong> tab</li>
+<li>Add branch rule named <code>Enrolled</code></li>
+<li>Expression: <code>expr { [mcget {session.custom.totp_enrolled}] == 1 }</code></li>
+</ol>
+
+<h3>Step 5: Configure Enrolled Branch</h3>
+<ol>
+<li>Add <strong>Logon Page</strong> for TOTP code:
+<ul>
+<li>Row 1: text, readonly, username, session.logon.last.username</li>
+<li>Row 2: password, totp_code, session.logon.last.totp_code, Label: "TOTP Code"</li>
+</ul>
+</li>
+<li>Add <strong>HTTP Auth</strong> action, select <code>http_aaa_totp_verify</code></li>
+<li>On Success → <strong>Allow</strong></li>
+<li>On Failure → <strong>Deny</strong></li>
+</ol>
+
+<h3>Step 6: Configure Not Enrolled Branch</h3>
+<ol>
+<li>Change ending to <strong>Redirect</strong></li>
+<li>Type: Custom</li>
+<li>URL: <code>https://totp-enroll.mfa-demo.local:443/enroll</code></li>
+</ol>
+
+<p>Click <strong>Apply Access Policy</strong>.</p>
+
+<h2>11.5 Create Webtop Resources</h2>
+<pre><code># Create full webtop
+tmsh create apm profile webtop webtop_mfa type full
+
+# Reset Authenticator link
+tmsh create apm resource webtop-link reset_authenticator \
+    type webtop-link \
+    webtop webtop_mfa \
+    label "Reset Authenticator" \
+    url "https://totp-admin.mfa-demo.local:443" \
+    target _blank
+    
+# Admin UI link
+tmsh create apm resource webtop-link totp_admin_ui \
+    type webtop-link \
+    webtop webtop_mfa \
+    label "TOTP Admin UI" \
+    url "https://totp-admin.mfa-demo.local:443" \
+    target _blank
+
+
+
+
+
+
+
+
+
+
