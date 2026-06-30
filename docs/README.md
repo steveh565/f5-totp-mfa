@@ -27,7 +27,7 @@ This folder contains the complete implementation guide for the F5 BIG-IP APM TOT
 
 | File | Description |
 |---|---|
-| [Object Inventory](appendices/object-inventory.md) | Complete list of all BIG-IP objects |
-| [User Management](appendices/user-management.md) | ldbutil command reference |
-| [Log Reference](appendices/log-reference.md) | All log message patterns |
-| [API Reference](appendices/api-reference.md) | TOTP verification API endpoints |
+| [Object Inventory](/docs/appendices/object-inventory.md) | Complete list of all BIG-IP objects |
+| [User Management](/docs/appendices/user-management.md) | ldbutil command reference |
+| [Log Reference](/docs/appendices/log-reference.md) | All log message patterns |
+| [API Reference](/docs/appendices/api-reference.md) | TOTP verification API endpoints |
