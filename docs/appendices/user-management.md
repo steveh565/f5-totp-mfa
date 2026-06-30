@@ -1,7 +1,8 @@
 # User Management & Experience
 
+Reference examples for administration of the local user database feature of APM (Lab only) along with screenshots of the Admin WebUI and Enrollment user experience.
+
 ## LDBUTIL Usage
-## Option A — Local DB (Lab/Testing)
 
 APM Local DB provides a simple user database stored on the BIG-IP. Ideal for lab environments, proof-of-concept deployments, and small-scale implementations.
 
