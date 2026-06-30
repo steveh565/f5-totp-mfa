@@ -6,7 +6,7 @@ This folder contains the complete implementation guide for the F5 BIG-IP APM TOT
 
 | File | Description |
 |---|---|
-| [Quick Start](quick-start.md) | Minimal single-unit deployment checklist |
+| [Quick Start](00-quick-start.md) | Minimal single-unit deployment checklist |
 | [Configuration Values](configuration-values.md) | All customizable values reference |
 | [01 - Prerequisites](01-prerequisites.md) | Platform, licensing, NTP, DNS |
 | [02 - Network Configuration](02-network-configuration.md) | VLANs, self-IPs, routing |
